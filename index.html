@@ -1,0 +1,2375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>KNOCK — The Malawian Casino Card Game</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;700&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --felt:#0d4a2e;--felt-light:#145c38;--felt-dark:#082a1a;
+  --gold:#c9a84c;--gold-light:#e8c96a;--gold-dark:#8a6a1e;
+  --cream:#f5f0e8;--card-red:#c0392b;--card-black:#1a1a2e;--chip-red:#e74c3c;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{background:var(--felt-dark);font-family:'EB Garamond',serif;min-height:100vh;overflow:hidden;color:var(--cream);}
+body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(ellipse at 50% 50%,rgba(20,92,56,0.4) 0%,transparent 70%),url("data:image/svg+xml,%3Csvg width='4' height='4' viewBox='0 0 4 4' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 3h1v1H1V3zm2-2h1v1H3V1z' fill='%23ffffff' fill-opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:0;}
+
+/* ── SCREENS ── */
+.screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:100;}
+.screen.hidden{display:none;}
+
+/* ── TITLE ── */
+#title-screen{background:radial-gradient(ellipse at center,#0d4a2e 0%,#061a0f 100%);flex-direction:column;gap:2rem;}
+.title-logo{text-align:center;}
+.title-logo h1{font-family:'Cinzel Decorative',cursive;font-size:clamp(4rem,12vw,9rem);font-weight:900;color:var(--gold);text-shadow:0 0 40px rgba(201,168,76,0.5),0 4px 8px rgba(0,0,0,0.8);letter-spacing:0.15em;line-height:1;}
+.title-subtitle{font-family:'Cinzel',serif;font-size:clamp(0.7rem,2vw,1rem);letter-spacing:0.4em;color:rgba(201,168,76,0.7);text-transform:uppercase;margin-top:0.5rem;}
+.suit-row{display:flex;gap:1.5rem;justify-content:center;font-size:2.5rem;margin:0.5rem 0;}
+.suit-row span{animation:suitFloat 3s ease-in-out infinite;}
+.suit-row span:nth-child(2){animation-delay:0.5s}.suit-row span:nth-child(3){animation-delay:1s}.suit-row span:nth-child(4){animation-delay:1.5s}
+@keyframes suitFloat{0%,100%{transform:translateY(0);opacity:0.7}50%{transform:translateY(-8px);opacity:1}}
+.player-select{display:flex;flex-direction:column;align-items:center;gap:1.2rem;width:100%;max-width:360px;}
+.player-select label{font-family:'Cinzel',serif;font-size:0.85rem;letter-spacing:0.25em;color:var(--gold-light);text-transform:uppercase;}
+.name-input{width:100%;padding:0.8rem 1.2rem;background:rgba(255,255,255,0.05);border:1px solid rgba(201,168,76,0.3);border-radius:6px;color:var(--cream);font-family:'EB Garamond',serif;font-size:1.1rem;outline:none;transition:border-color 0.2s;}
+.name-input:focus{border-color:var(--gold)}.name-input::placeholder{color:rgba(245,240,232,0.3)}
+.btn-primary{padding:1rem 3rem;background:linear-gradient(135deg,var(--gold-dark),var(--gold),var(--gold-light));border:none;border-radius:6px;color:var(--felt-dark);font-family:'Cinzel',serif;font-size:1rem;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;cursor:pointer;transition:all 0.25s;box-shadow:0 4px 20px rgba(201,168,76,0.3);}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(201,168,76,0.5)}.btn-primary:active{transform:translateY(0)}
+
+/* ── CARD PICK SCREEN ── */
+#pick-screen{background:radial-gradient(ellipse at center,#0d4a2e 0%,#061a0f 100%);flex-direction:column;gap:1.8rem;z-index:150;}
+.pick-title{font-family:'Cinzel Decorative',cursive;font-size:clamp(1.2rem,4vw,2rem);color:var(--gold);letter-spacing:0.15em;text-align:center;text-shadow:0 0 30px rgba(201,168,76,0.5);}
+.pick-subtitle{font-family:'Cinzel',serif;font-size:0.8rem;letter-spacing:0.2em;color:rgba(201,168,76,0.6);text-transform:uppercase;text-align:center;margin-top:-1rem;}
+.pick-cards-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;max-width:700px;padding:0 16px;}
+.pick-card{width:62px;height:88px;border-radius:8px;cursor:pointer;background:linear-gradient(135deg,#1e3a5f,#0a1f3a);border:2px solid rgba(201,168,76,0.35);box-shadow:2px 4px 12px rgba(0,0,0,0.6);position:relative;flex-shrink:0;transition:transform 0.25s cubic-bezier(0.34,1.56,0.64,1),box-shadow 0.25s,border-color 0.2s;}
+.pick-card::after{content:'';position:absolute;inset:4px;border:1px solid rgba(201,168,76,0.18);border-radius:5px;background:repeating-linear-gradient(45deg,transparent,transparent 4px,rgba(201,168,76,0.05) 4px,rgba(201,168,76,0.05) 8px);}
+.pick-card:hover:not(.picked-by-me):not(.disabled){transform:translateY(-14px) scale(1.06);box-shadow:0 18px 36px rgba(0,0,0,0.7),0 0 0 2px var(--gold);border-color:var(--gold);}
+.pick-card.disabled{cursor:default;opacity:0.5;}
+.pick-card.picked-by-me{background:linear-gradient(135deg,#1a4a1a,#0d3a0d);border-color:var(--gold);cursor:default;transform:translateY(-6px);}
+.pick-card.face-revealed{background:var(--cream);border-color:rgba(0,0,0,0.15);box-shadow:2px 4px 12px rgba(0,0,0,0.5),inset 0 0 0 2px rgba(255,255,255,0.8);cursor:default;}
+.pick-card.face-revealed::after{display:none;}
+.pick-card .pr{position:absolute;font-family:'Cinzel',serif;font-weight:700;font-size:1rem;line-height:1;}
+.pick-card .pr.t{top:4px;left:6px}.pick-card .pr.b{bottom:4px;right:6px;transform:rotate(180deg)}
+.pick-card .pc{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:1.7rem;line-height:1;}
+.pick-card.red-card .pr,.pick-card.red-card .pc{color:var(--card-red)}
+.pick-card.black-card .pr,.pick-card.black-card .pc{color:var(--card-black)}
+.pick-status{font-family:'Cinzel',serif;font-size:0.75rem;letter-spacing:0.15em;color:rgba(201,168,76,0.7);text-align:center;min-height:1.4em;}
+.pick-players-row{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;}
+.pick-player-chip{font-family:'Cinzel',serif;font-size:0.65rem;letter-spacing:0.1em;padding:4px 12px;border-radius:20px;border:1px solid rgba(201,168,76,0.25);background:rgba(0,0,0,0.3);color:rgba(201,168,76,0.5);white-space:nowrap;transition:all 0.3s;}
+.pick-player-chip.done{border-color:var(--gold);background:rgba(201,168,76,0.15);color:var(--gold-light);}
+.pick-player-chip.winner{border-color:#e74c3c;background:rgba(231,76,60,0.2);color:#ff8a7a;box-shadow:0 0 12px rgba(231,76,60,0.4);}
+
+/* ── WIN SCREEN ── */
+#win-screen{background:radial-gradient(ellipse at center,#0d4a2e 0%,#030f07 100%);flex-direction:column;gap:1.5rem;z-index:1000;}
+.win-title{font-family:'Cinzel Decorative',cursive;font-size:clamp(2.5rem,8vw,5rem);color:var(--gold);text-shadow:0 0 40px rgba(201,168,76,0.6);text-align:center;animation:winPulse 2s ease-in-out infinite;}
+@keyframes winPulse{0%,100%{text-shadow:0 0 40px rgba(201,168,76,0.6)}50%{text-shadow:0 0 80px rgba(201,168,76,0.9),0 0 120px rgba(201,168,76,0.4)}}
+.win-player{font-family:'Cinzel',serif;font-size:clamp(1.2rem,4vw,2rem);color:var(--cream);letter-spacing:0.15em;text-align:center;}
+.confetti-container{position:fixed;inset:0;pointer-events:none;overflow:hidden;}
+.confetti-piece{position:absolute;top:-20px;border-radius:2px;animation:confettiFall linear forwards;}
+@keyframes confettiFall{to{transform:translateY(110vh) rotate(720deg);opacity:0}}
+
+/* ── SUIT MODAL ── */
+.modal-overlay{
+  position:fixed;
+  top:0;left:0;right:0;
+  /* Only covers down to just above the hand area — hand stays fully visible */
+  bottom:185px;
+  background:rgba(0,0,0,0.72);
+  display:flex;align-items:center;justify-content:center;
+  z-index:500;
+  backdrop-filter:blur(4px);
+}
+.modal-overlay.hidden{display:none}
+.modal-box{background:linear-gradient(135deg,#0a2a16,#0d4a2e);border:2px solid rgba(201,168,76,0.4);border-radius:16px;padding:2rem;display:flex;flex-direction:column;align-items:center;gap:1.2rem;box-shadow:0 20px 60px rgba(0,0,0,0.8);min-width:300px;}
+.modal-title{font-family:'Cinzel',serif;font-size:1rem;letter-spacing:0.2em;color:var(--gold-light);text-transform:uppercase;}
+.suit-picker-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.suit-pick-btn{width:80px;height:80px;border-radius:12px;border:2px solid rgba(201,168,76,0.3);background:rgba(255,255,255,0.05);font-size:2.5rem;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;}
+.suit-pick-btn:hover{border-color:var(--gold);background:rgba(201,168,76,0.15);transform:scale(1.1);box-shadow:0 0 20px rgba(201,168,76,0.3);}
+
+/* ── GAME TABLE ── */
+#game-screen{display:block;width:100vw;height:100vh;background:radial-gradient(ellipse at center,var(--felt-light) 0%,var(--felt) 40%,var(--felt-dark) 100%);position:relative;z-index:1;}
+#game-screen.hidden{display:none}
+#game-screen::before{content:'';position:fixed;inset:8px;border:3px solid rgba(201,168,76,0.2);border-radius:50%/15%;pointer-events:none;box-shadow:inset 0 0 60px rgba(0,0,0,0.4);}
+
+/* Screen shake */
+@keyframes screenShake{
+  0%,100%{transform:translate(0,0) rotate(0deg)}
+  10%{transform:translate(-6px,-4px) rotate(-0.5deg)}
+  20%{transform:translate(6px,4px) rotate(0.5deg)}
+  30%{transform:translate(-6px,2px) rotate(0deg)}
+  40%{transform:translate(6px,-2px) rotate(0.5deg)}
+  50%{transform:translate(-4px,4px) rotate(-0.5deg)}
+  60%{transform:translate(4px,-4px) rotate(0deg)}
+  70%{transform:translate(-2px,2px) rotate(-0.5deg)}
+  80%{transform:translate(2px,-2px) rotate(0.5deg)}
+  90%{transform:translate(-2px,0) rotate(0deg)}
+}
+#game-screen.shake{animation:screenShake 0.55s cubic-bezier(0.36,0.07,0.19,0.97);}
+
+/* ── PENTAGON TABLE ── */
+#game-screen{position:relative;overflow:hidden;}
+.table-arena{position:absolute;inset:0;pointer-events:none;}
+
+/* Pentagon SVG table is rendered inside .table-arena via JS */
+.pentagon-svg{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);}
+
+/* Pile area sits at exact center of viewport */
+.pile-area{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;gap:28px;align-items:center;justify-content:center;z-index:5;pointer-events:all;}
+.pile-col{display:flex;flex-direction:column;align-items:center;gap:6px;}
+.pile-label{font-family:'Cinzel',serif;font-size:0.6rem;letter-spacing:0.2em;color:rgba(201,168,76,0.5);text-transform:uppercase;}
+
+/* Direction ring */
+.direction-indicator{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:90px;height:90px;pointer-events:none;z-index:4;}
+.direction-arrow{width:100%;height:100%;border:2px solid rgba(201,168,76,0.2);border-radius:50%;position:relative;animation:rotateCW 8s linear infinite;}
+.direction-arrow.ccw{animation-direction:reverse}
+.direction-arrow::after{content:'▶';position:absolute;top:-11px;left:50%;transform:translateX(-50%);color:rgba(201,168,76,0.4);font-size:0.65rem;}
+@keyframes rotateCW{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+
+/* Player zones — absolutely positioned around pentagon by JS */
+.player-zone{position:absolute;display:flex;flex-direction:column;align-items:center;gap:5px;pointer-events:none;transition:opacity 0.3s;}
+.player-zone.p-bottom{pointer-events:all;}  /* human zone is interactive */
+.player-name-badge{font-family:'Cinzel',serif;font-size:0.68rem;letter-spacing:0.1em;padding:4px 12px;border-radius:20px;border:1px solid rgba(201,168,76,0.3);background:rgba(0,0,0,0.55);color:var(--gold-light);white-space:nowrap;position:relative;transition:all 0.3s;backdrop-filter:blur(4px);}
+.player-name-badge.active-turn{border-color:var(--gold);background:rgba(201,168,76,0.25);box-shadow:0 0 16px rgba(201,168,76,0.5);}
+.knock-badge{position:absolute;top:-8px;right:-8px;background:var(--chip-red);color:white;font-size:0.5rem;padding:2px 5px;border-radius:10px;font-family:'Cinzel',serif;white-space:nowrap;}
+.mini-cards{display:flex;justify-content:center;}
+.mini-card{width:22px;height:32px;background:linear-gradient(135deg,#1e3a5f,#0a1f3a);border:1px solid rgba(201,168,76,0.4);border-radius:3px;margin-left:-5px;box-shadow:1px 1px 3px rgba(0,0,0,0.5);}
+.card-count-lbl{font-size:0.58rem;color:rgba(245,240,232,0.4);font-family:'Cinzel',serif;}
+
+/* ── CARDS ── */
+.card{width:72px;height:100px;border-radius:8px;position:relative;cursor:default;transition:transform 0.2s,box-shadow 0.2s;flex-shrink:0;user-select:none;}
+.card.face-up{background:var(--cream);border:1px solid rgba(0,0,0,0.15);box-shadow:2px 4px 12px rgba(0,0,0,0.5),inset 0 0 0 2px rgba(255,255,255,0.8);}
+.card.face-down{background:linear-gradient(135deg,#1e3a5f,#0a1f3a);border:1px solid rgba(201,168,76,0.4);box-shadow:2px 4px 12px rgba(0,0,0,0.5);}
+.card.face-down::after{content:'';position:absolute;inset:4px;border:1px solid rgba(201,168,76,0.2);border-radius:5px;background:repeating-linear-gradient(45deg,transparent,transparent 4px,rgba(201,168,76,0.06) 4px,rgba(201,168,76,0.06) 8px);}
+.card-rank{position:absolute;font-family:'Cinzel',serif;font-weight:700;font-size:1.1rem;line-height:1;}
+.card-rank.top{top:5px;left:7px}.card-rank.bot{bottom:5px;right:7px;transform:rotate(180deg)}
+.card-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:2rem;line-height:1;}
+.card.red .card-rank,.card.red .card-center{color:var(--card-red)}
+.card.black .card-rank,.card.black .card-center{color:var(--card-black)}
+.discard-card{width:90px;height:126px;border-radius:10px;}
+.discard-card .card-rank{font-size:1.3rem}.discard-card .card-center{font-size:2.5rem}
+.discard-card.face-up{box-shadow:0 0 0 3px rgba(201,168,76,0.4),4px 8px 24px rgba(0,0,0,0.6)}
+
+/* ── DRAW PILE ── */
+.draw-pile-stack{position:relative;width:90px;height:126px;cursor:pointer;transition:box-shadow 0.3s;}
+.draw-pile-stack .card{position:absolute;width:90px;height:126px;border-radius:10px;transition:transform 0.15s;}
+.draw-pile-stack .card:nth-child(1){transform:translate(-2px,-2px)}.draw-pile-stack .card:nth-child(2){transform:translate(0,0)}.draw-pile-stack .card:nth-child(3){transform:translate(2px,2px)}
+.draw-pile-stack:hover .card{transform:translate(0,-4px)!important;box-shadow:4px 12px 28px rgba(0,0,0,0.6)}
+.draw-pile-stack.penalty-glow{animation:penaltyPulse 1s ease-in-out infinite;}
+@keyframes penaltyPulse{0%,100%{box-shadow:0 0 0 0 rgba(231,76,60,0)}50%{box-shadow:0 0 0 12px rgba(231,76,60,0.5),0 0 30px rgba(231,76,60,0.3)}}
+.draw-count{position:absolute;bottom:-22px;left:50%;transform:translateX(-50%);font-family:'Cinzel',serif;font-size:0.65rem;color:rgba(201,168,76,0.6);letter-spacing:0.1em;white-space:nowrap;}
+
+/* ── ACTIVE SUIT ── */
+.active-suit-display{
+  position:fixed;top:10px;right:14px;
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  z-index:200;           /* always on top of everything */
+  background:rgba(4,18,10,0.82);
+  border:1px solid rgba(201,168,76,0.4);
+  border-radius:10px;
+  padding:6px 10px 4px;
+  backdrop-filter:blur(6px);
+  box-shadow:0 0 18px rgba(201,168,76,0.2);
+  transition:opacity 0.3s;
+}
+.active-suit-display.hidden-suit{display:none;}
+.active-suit-label{font-family:'Cinzel',serif;font-size:0.55rem;letter-spacing:0.15em;color:rgba(201,168,76,0.6);text-transform:uppercase;}
+.active-suit-symbol{font-size:1.9rem;filter:drop-shadow(0 0 10px currentColor);animation:suitPulse 2s ease-in-out infinite;line-height:1;}
+@keyframes suitPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+
+/* ── PLAYER HAND AREA (bottom of screen) ── */
+.player-area{
+  position:absolute;bottom:0;left:0;right:0;
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  padding:8px 16px 14px;
+  background:linear-gradient(to top, rgba(6,26,15,0.95) 0%, rgba(6,26,15,0.7) 80%, transparent 100%);
+  z-index:10;
+}
+.player-info-bar{display:flex;align-items:center;gap:12px;font-family:'Cinzel',serif;font-size:0.75rem;letter-spacing:0.1em;color:var(--gold-light);}
+/* Fan layout */
+.hand-container{display:flex;align-items:flex-end;justify-content:center;min-height:120px;position:relative;width:100%;padding:0 8px 4px;}
+.hand-card{width:68px;height:95px;border-radius:8px;cursor:pointer;flex-shrink:0;position:absolute;transform-origin:bottom center;transition:box-shadow 0.2s;touch-action:manipulation;}
+.hand-card.playable{box-shadow:0 0 0 2px rgba(201,168,76,0.5),2px 4px 12px rgba(0,0,0,0.5);}
+.hand-card.unplayable{opacity:0.45;cursor:not-allowed;filter:grayscale(0.4);}
+.hand-card.sel8{box-shadow:0 0 0 3px #c9a84c,0 24px 40px rgba(0,0,0,0.6)!important;}
+
+/* ── COMBO BAR ── */
+.combo-bar{position:absolute;bottom:170px;left:50%;transform:translateX(-50%);display:none;gap:10px;z-index:20;}
+.btn-action{padding:0.6rem 1.5rem;border-radius:6px;border:1px solid rgba(201,168,76,0.4);background:rgba(0,0,0,0.5);color:var(--gold-light);font-family:'Cinzel',serif;font-size:0.75rem;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;transition:all 0.2s;backdrop-filter:blur(4px);}
+.btn-action:hover{background:rgba(201,168,76,0.2);border-color:var(--gold);box-shadow:0 0 15px rgba(201,168,76,0.3);}
+.btn-action.danger{border-color:rgba(231,76,60,0.5);color:rgba(231,76,60,0.9);}
+.btn-action.danger:hover{background:rgba(231,76,60,0.15);}
+/* Primary solo-8 button */
+.btn-action.primary{background:linear-gradient(135deg,var(--gold-dark),var(--gold));color:var(--felt-dark);border-color:var(--gold);font-weight:700;}
+.btn-action.primary:hover{box-shadow:0 0 20px rgba(201,168,76,0.6);transform:scale(1.03);}
+
+/* ── LOG ── */
+/* ── LOG — vertical list, centered on table ── */
+.game-log{
+  position:absolute;
+  top:0;left:50%;
+  transform:translateX(-50%);
+  width:240px;
+  display:flex;flex-direction:column;align-items:center;
+  z-index:16;pointer-events:none;
+  padding-top:6px;
+}
+.log-ticker-inner{
+  display:flex;flex-direction:column;align-items:center;gap:0;width:100%;
+}
+/* Each entry gets its opacity set inline (newest=full, oldest=near zero) */
+.log-entry{
+  font-size:0.68rem;
+  color:rgba(245,240,232,0.9);
+  font-family:'EB Garamond',serif;font-style:italic;
+  text-align:center;white-space:nowrap;
+  line-height:1.55;
+  transition:opacity 0.4s ease;
+}
+.log-entry.important{
+  color:var(--gold-light);font-style:normal;
+  font-family:'Cinzel',serif;font-size:0.63rem;letter-spacing:0.08em;
+}
+@keyframes logFadeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.thinking-dots{display:none;gap:4px;align-items:center;}
+.thinking-dots.show{display:flex}
+.thinking-dots span{width:5px;height:5px;border-radius:50%;background:var(--gold);animation:dotPulse 1s ease-in-out infinite;}
+.thinking-dots span:nth-child(2){animation-delay:0.2s}.thinking-dots span:nth-child(3){animation-delay:0.4s}
+@keyframes dotPulse{0%,100%{opacity:0.2;transform:scale(0.8)}50%{opacity:1;transform:scale(1.2)}}
+
+/* ── TOAST ── */
+.toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);background:rgba(0,0,0,0.85);border:2px solid var(--gold);color:var(--gold-light);padding:1rem 2rem;border-radius:8px;font-family:'Cinzel',serif;font-size:1.1rem;letter-spacing:0.15em;z-index:999;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);pointer-events:none;text-align:center;backdrop-filter:blur(4px);}
+.toast.show{transform:translate(-50%,-50%) scale(1)}
+
+/* ── KNOCK OVERLAY ── */
+#knock-overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:900;pointer-events:none;opacity:0;transition:opacity 0.2s;}
+#knock-overlay.show{opacity:1;}
+.knock-burst{font-family:'Cinzel Decorative',cursive;font-size:clamp(4rem,15vw,9rem);font-weight:900;color:#fff;text-shadow:0 0 40px rgba(231,76,60,1),0 0 80px rgba(231,76,60,0.6);letter-spacing:0.05em;animation:knockBurst 1.5s cubic-bezier(0.22,1,0.36,1) forwards;}
+@keyframes knockBurst{
+  0%{transform:scale(0.2) rotate(-10deg);opacity:0;}
+  15%{transform:scale(1.2) rotate(3deg);opacity:1;}
+  30%{transform:scale(0.95) rotate(-1deg);}
+  50%{transform:scale(1.05) rotate(0deg);opacity:1;}
+  80%{transform:scale(1) rotate(0deg);opacity:1;}
+  100%{transform:scale(0.1) rotate(5deg);opacity:0;}
+}
+
+/* ── FLYING CARDS ── */
+.fly{position:fixed;z-index:800;pointer-events:none;border-radius:8px;}
+.fly.face-up{background:var(--cream);border:1px solid rgba(0,0,0,0.15);box-shadow:4px 8px 24px rgba(0,0,0,0.7);}
+.fly.face-down{background:linear-gradient(135deg,#1e3a5f,#0a1f3a);border:1px solid rgba(201,168,76,0.4);box-shadow:4px 8px 24px rgba(0,0,0,0.7);}
+.fly.face-down::after{content:'';position:absolute;inset:4px;border:1px solid rgba(201,168,76,0.2);border-radius:5px;background:repeating-linear-gradient(45deg,transparent,transparent 4px,rgba(201,168,76,0.06) 4px,rgba(201,168,76,0.06) 8px);}
+.fly .cr{position:absolute;font-family:'Cinzel',serif;font-weight:700;font-size:1.1rem;line-height:1;}
+.fly .cr.t{top:5px;left:7px}.fly .cr.b{bottom:5px;right:7px;transform:rotate(180deg)}
+.fly .cc{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:2rem;line-height:1;}
+.fly.red .cr,.fly.red .cc{color:var(--card-red)}
+.fly.black .cr,.fly.black .cc{color:var(--card-black)}
+
+/* ── TURN TIMER ── */
+.turn-timer{position:absolute;bottom:175px;right:20px;display:none;flex-direction:column;align-items:center;gap:4px;z-index:25;}
+.turn-timer.visible{display:flex;}
+.timer-ring-wrap{position:relative;width:52px;height:52px;}
+.timer-ring-svg{transform:rotate(-90deg);}
+.timer-ring-bg{fill:none;stroke:rgba(201,168,76,0.15);stroke-width:4;}
+.timer-ring-fg{fill:none;stroke:var(--gold);stroke-width:4;stroke-linecap:round;transition:stroke-dashoffset 0.5s linear,stroke 0.3s;}
+.timer-ring-fg.urgent{stroke:#e74c3c;}
+.timer-number{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Cinzel',serif;font-size:1rem;font-weight:700;color:var(--gold);transition:color 0.3s;}
+.timer-number.urgent{color:#e74c3c;animation:timerPulse 0.5s ease-in-out infinite;}
+.timer-label{font-family:'Cinzel',serif;font-size:0.55rem;letter-spacing:0.15em;color:rgba(201,168,76,0.5);text-transform:uppercase;}
+@keyframes timerPulse{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.2)}}
+
+/* ── MOBILE RESPONSIVE ── */
+@media (max-width: 480px) {
+  .card{width:58px;height:80px;}
+  .discard-card{width:74px;height:102px;}
+  .draw-pile-stack{width:74px;height:102px;}
+  .draw-pile-stack .card{width:74px;height:102px;}
+  .hand-card{width:58px;height:80px;}
+  .hand-container{min-height:100px;}
+  .game-log{width:130px;max-height:110px;}
+  .player-name-badge{font-size:0.6rem;padding:3px 8px;}
+  .mini-card{width:18px;height:26px;}
+}
+@media (max-height: 600px){
+  .player-area{padding:4px 8px 10px;}
+  .hand-container{min-height:90px;}
+  .hand-card{width:56px;height:78px;}
+}
+
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(201,168,76,0.3);border-radius:2px}
+
+/* ── BALANCE BADGES on pentagon zones ── */
+.balance-badge{
+  font-family:'Cinzel',serif;font-size:0.58rem;letter-spacing:0.05em;
+  color:var(--gold-light);
+  background:rgba(0,0,0,0.5);
+  border:1px solid rgba(201,168,76,0.3);
+  border-radius:10px;padding:2px 7px;
+  margin-top:1px;
+}
+.balance-badge.low{color:#e74c3c;border-color:rgba(231,76,60,0.4);}
+.balance-badge.eliminated{color:rgba(245,240,232,0.25);text-decoration:line-through;}
+
+/* Human balance bar */
+.human-balance-bar{
+  font-family:'Cinzel',serif;font-size:0.72rem;letter-spacing:0.12em;
+  color:var(--gold-light);display:flex;align-items:center;gap:10px;
+}
+.hbal-amount{font-weight:700;color:var(--gold);}
+.hbal-bet{color:rgba(201,168,76,0.6);font-size:0.62rem;}
+
+/* ── ROUND RESULT SCREEN ── */
+.round-result-box{
+  display:flex;flex-direction:column;align-items:center;gap:1.2rem;
+  max-width:440px;width:90vw;padding:2.5rem 2rem;
+  background:linear-gradient(145deg,#061a0f,#0a2a16);
+  border:2px solid rgba(201,168,76,0.35);border-radius:18px;
+  box-shadow:0 24px 60px rgba(0,0,0,0.8);
+}
+.rr-title{font-family:'Cinzel Decorative',cursive;font-size:clamp(1.6rem,5vw,2.6rem);color:var(--gold);text-shadow:0 0 30px rgba(201,168,76,0.5);letter-spacing:0.1em;text-align:center;}
+.rr-winner{font-family:'Cinzel',serif;font-size:1.1rem;color:var(--cream);letter-spacing:0.15em;text-align:center;}
+.rr-pot{font-family:'Cinzel',serif;font-size:0.8rem;color:rgba(201,168,76,0.7);letter-spacing:0.1em;}
+.rr-standings{width:100%;border-collapse:collapse;margin-top:0.5rem;}
+.rr-standings th{font-family:'Cinzel',serif;font-size:0.6rem;letter-spacing:0.15em;color:rgba(201,168,76,0.5);text-transform:uppercase;padding:4px 8px;border-bottom:1px solid rgba(201,168,76,0.15);}
+.rr-standings td{font-family:'EB Garamond',serif;font-size:0.88rem;padding:5px 8px;color:var(--cream);border-bottom:1px solid rgba(255,255,255,0.05);}
+.rr-standings .winner-row td{color:var(--gold-light);font-weight:600;}
+.rr-standings .elim-row td{color:rgba(245,240,232,0.28);text-decoration:line-through;}
+.rr-delta.pos{color:#2ecc71;}.rr-delta.neg{color:#e74c3c;}
+.rr-chip-row{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;margin-top:0.3rem;}
+.chip{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:0.65rem;font-weight:700;cursor:pointer;border:3px solid rgba(255,255,255,0.2);box-shadow:0 4px 14px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.2);transition:all 0.18s;position:relative;letter-spacing:0.04em;user-select:none;}
+.chip:hover{transform:translateY(-3px) scale(1.07);box-shadow:0 8px 20px rgba(0,0,0,0.6);}
+.chip:active{transform:scale(0.96);}
+.chip.c500{background:radial-gradient(circle at 35% 35%,#e74c3c,#8b1a1a);border-color:rgba(255,180,180,0.35);color:#fff;}
+.chip-label{font-size:0.58rem;text-align:center;color:rgba(201,168,76,0.6);font-family:'Cinzel',serif;letter-spacing:0.05em;}
+.bet-display{font-family:'Cinzel',serif;font-size:1rem;color:var(--gold);letter-spacing:0.1em;min-height:1.5em;text-align:center;}
+.bet-display span{color:var(--gold-light);}
+.rr-btn-row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:0.5rem;}
+.rr-note{font-family:'EB Garamond',serif;font-size:0.78rem;color:rgba(245,240,232,0.4);font-style:italic;text-align:center;}
+/* Chip rack in game (shows human bet) */
+.bet-info-bar{
+  position:absolute;bottom:175px;left:50%;transform:translateX(-50%);
+  font-family:'Cinzel',serif;font-size:0.62rem;letter-spacing:0.1em;
+  color:rgba(201,168,76,0.6);z-index:12;pointer-events:none;
+  white-space:nowrap;
+}
+</style>
+</head>
+<body>
+
+<!-- TITLE SCREEN -->
+<div id="title-screen" class="screen">
+  <div class="title-logo">
+    <h1>KNOCK</h1>
+    <div class="title-subtitle">The Malawian Casino Card Game</div>
+  </div>
+  <div class="suit-row">
+    <span>&#9824;</span>
+    <span style="color:#c0392b">&#9829;</span>
+    <span>&#9827;</span>
+    <span style="color:#c0392b">&#9830;</span>
+  </div>
+  <div class="player-select">
+    <label>Your Name</label>
+    <input type="text" class="name-input" id="player-name-input" placeholder="Enter your name..." maxlength="14" value="You">
+    <button class="btn-primary" onclick="startGame()">Deal Cards</button>
+  </div>
+</div>
+
+<!-- CARD PICK SCREEN -->
+<div id="pick-screen" class="screen hidden">
+  <div class="pick-title">Choose Your Card</div>
+  <div class="pick-subtitle">Lowest value starts the round</div>
+  <div class="pick-players-row" id="pick-players-row"></div>
+  <div class="pick-cards-row" id="pick-cards-row"></div>
+  <div class="pick-status" id="pick-status">Pick one card from the table</div>
+</div>
+
+<!-- ROUND RESULT SCREEN -->
+<div id="win-screen" class="screen hidden">
+  <div class="confetti-container" id="confetti-container"></div>
+  <div id="round-result-content">
+    <!-- populated by JS -->
+  </div>
+</div>
+
+<!-- TOURNAMENT OVER SCREEN -->
+<div id="tourney-screen" class="screen hidden">
+  <div class="confetti-container" id="confetti-container-2"></div>
+  <div class="win-title" id="tourney-title">CHAMPION!</div>
+  <div class="win-player" id="tourney-winner"></div>
+  <div style="font-family:'Cinzel',serif;font-size:0.9rem;color:rgba(201,168,76,0.7);letter-spacing:0.15em;margin-top:0.5rem;" id="tourney-prize"></div>
+  <button class="btn-primary" style="margin-top:2rem" onclick="resetGame()">New Game</button>
+</div>
+
+<!-- SUIT MODAL -->
+<div class="modal-overlay hidden" id="suit-modal">
+  <div class="modal-box">
+    <div class="modal-title">Declare Active Suit</div>
+    <div class="suit-picker-grid">
+      <button class="suit-pick-btn" onclick="declareSuit('S')">&#9824;</button>
+      <button class="suit-pick-btn" style="color:#c0392b" onclick="declareSuit('H')">&#9829;</button>
+      <button class="suit-pick-btn" onclick="declareSuit('C')">&#9827;</button>
+      <button class="suit-pick-btn" style="color:#c0392b" onclick="declareSuit('D')">&#9830;</button>
+    </div>
+  </div>
+</div>
+
+<!-- KNOCK OVERLAY -->
+<div id="knock-overlay">
+  <div class="knock-burst" id="knock-burst-text">✋ KNOCK!</div>
+</div>
+
+<!-- GAME TABLE -->
+<div id="game-screen" class="hidden">
+
+  <!-- Pentagon arena: AI player zones rendered here by JS -->
+  <div class="table-arena" id="table-arena"></div>
+
+  <!-- Game log ticker (top strip) -->
+  <div class="game-log" id="game-log"><div class="log-ticker-inner" id="log-ticker"></div></div>
+
+  <!-- Active suit display (top-right) -->
+  <div class="active-suit-display hidden-suit" id="active-suit-display">
+    <span class="active-suit-label">Active Suit</span>
+    <span class="active-suit-symbol" id="active-suit-symbol"></span>
+  </div>
+
+  <!-- Direction ring (center, behind piles) -->
+  <div class="direction-indicator">
+    <div class="direction-arrow" id="direction-arrow"></div>
+  </div>
+
+  <!-- Center piles -->
+  <div class="pile-area">
+    <div class="pile-col">
+      <div class="pile-label">Draw Pile</div>
+      <div class="draw-pile-stack" id="draw-pile" onclick="playerDraw()">
+        <div class="card face-down"></div>
+        <div class="card face-down"></div>
+        <div class="card face-down"></div>
+      </div>
+      <span class="draw-count" id="draw-count">0 cards</span>
+    </div>
+    <div class="pile-col">
+      <div class="pile-label">Discard Pile</div>
+      <div id="discard-pile-display"></div>
+    </div>
+  </div>
+
+  <!-- Turn Timer -->
+  <div class="turn-timer" id="turn-timer">
+    <div class="timer-ring-wrap">
+      <svg class="timer-ring-svg" width="52" height="52" viewBox="0 0 52 52">
+        <circle class="timer-ring-bg" cx="26" cy="26" r="22"/>
+        <circle class="timer-ring-fg" id="timer-ring-fg" cx="26" cy="26" r="22"
+          stroke-dasharray="138.2" stroke-dashoffset="0"/>
+      </svg>
+      <div class="timer-number" id="timer-number">8</div>
+    </div>
+    <div class="timer-label">seconds</div>
+  </div>
+
+  <!-- Combo bar -->
+  <div class="combo-bar" id="combo-bar">
+    <button class="btn-action primary" onclick="playEightSolo()">✋ Play Solo (draw 1)</button>
+    <button class="btn-action danger" onclick="cancelCombo()">&#x2715; Cancel</button>
+  </div>
+
+  <!-- Bet info bar (shows current round bet) -->
+  <div class="bet-info-bar" id="bet-info-bar"></div>
+
+  <!-- Human player area at bottom -->
+  <div class="player-area">
+    <div class="player-info-bar">
+      <span id="player-turn-label">YOUR TURN</span>
+      <div class="thinking-dots" id="thinking-dots"><span></span><span></span><span></span></div>
+      <div class="human-balance-bar" id="human-balance-bar"></div>
+    </div>
+    <div class="hand-container" id="player-hand"></div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// CONFIG — all tunable constants in one place
+// ============================================================
+const CONFIG = {
+  AI_NAMES: ['Mwana','Temwa','Chisomo','Kondwani'],
+  TIMER_SECS: 7.5,
+  AI_THINK_MIN: 750,
+  AI_THINK_JITTER: 550,
+  PENALTY_DRAW_COUNT: 2,
+  // Suit symbols (SVG-safe unicode)
+  SUITS: ['S','H','C','D'],
+  RANKS: ['2','3','4','5','6','7','8','9','10','J','Q','K','A'],
+  // Standard rank ordering for game logic
+  RANK_VAL: {'2':0,'3':1,'4':2,'5':3,'6':4,'7':5,'8':6,'9':7,'10':8,'J':9,'Q':10,'K':11,'A':12},
+  // Pick-phase start values: 3-9 = face value, 2/A/8/J/Q/K = high (unfavourable)
+  PICK_VAL:  {'2':20,'3':3,'4':4,'5':5,'6':6,'7':7,'8':15,'9':9,'10':10,'J':15,'Q':15,'K':15,'A':15},
+  // Suit tie-breaker rank (higher = worse during pick phase, so LOWER wins)
+  // S=4 H=3 C=2 D=1 → Spades lose tie (highest), Diamonds win tie (lowest)
+  SUIT_TIE: {'S':4,'H':3,'C':2,'D':1},
+  // Card fan physics
+  FAN_MAX_ROT_DEG: 18,   // max rotation at hand edges
+  FAN_MAX_LIFT_PX: 22,   // how much edge cards lift
+  FAN_SPREAD_PX: 52,     // horizontal spacing per card
+  HAND_HOVER_LIFT: 26,
+  // Special card ranks
+  SPECIAL_CARDS: ['8','2','J','A'],
+};
+
+const SYM = {S:'♠',H:'♥',C:'♣',D:'♦'};
+
+// ============================================================
+// AUDIO SERVICE
+// ============================================================
+class AudioService {
+  constructor(){
+    this._ctx = null;
+    this._muted = false;
+  }
+  _ctx_get(){
+    if(!this._ctx){
+      try{ this._ctx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){}
+    }
+    return this._ctx;
+  }
+  // Synthesise sounds via Web Audio — no external files needed, <500B each
+  card_slide(){
+    if(this._muted) return;
+    const ctx = this._ctx_get(); if(!ctx) return;
+    const g = ctx.createGain(); g.connect(ctx.destination);
+    g.gain.setValueAtTime(0.18, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+0.12);
+    const o = ctx.createOscillator();
+    o.type='bandpass'; o.frequency.setValueAtTime(1200, ctx.currentTime);
+    o.frequency.exponentialRampToValueAtTime(600, ctx.currentTime+0.1);
+    o.connect(g); o.start(); o.stop(ctx.currentTime+0.12);
+    // Pink noise burst
+    const buf = ctx.createBuffer(1,ctx.sampleRate*0.1,ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*0.15;
+    const src = ctx.createBufferSource(); src.buffer=buf;
+    const g2 = ctx.createGain(); g2.gain.setValueAtTime(1,ctx.currentTime); g2.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.1);
+    src.connect(g2); g2.connect(ctx.destination); src.start();
+  }
+  knock_slam(){
+    if(this._muted) return;
+    const ctx = this._ctx_get(); if(!ctx) return;
+    [80,120,200].forEach((f,i)=>{
+      const g=ctx.createGain(); g.connect(ctx.destination);
+      g.gain.setValueAtTime(0.4/(i+1), ctx.currentTime+i*0.03);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+0.4+i*0.05);
+      const o=ctx.createOscillator(); o.type='sine';
+      o.frequency.setValueAtTime(f, ctx.currentTime+i*0.03);
+      o.frequency.exponentialRampToValueAtTime(f*0.5, ctx.currentTime+0.4+i*0.05);
+      o.connect(g); o.start(ctx.currentTime+i*0.03); o.stop(ctx.currentTime+0.5+i*0.05);
+    });
+  }
+  shuffle(){
+    if(this._muted) return;
+    const ctx = this._ctx_get(); if(!ctx) return;
+    for(let i=0;i<6;i++){
+      const g=ctx.createGain(); g.connect(ctx.destination);
+      const t=ctx.currentTime+i*0.08;
+      g.gain.setValueAtTime(0.12, t); g.gain.exponentialRampToValueAtTime(0.001,t+0.07);
+      const buf=ctx.createBuffer(1,ctx.sampleRate*0.07,ctx.sampleRate);
+      const d=buf.getChannelData(0);
+      for(let j=0;j<d.length;j++) d[j]=(Math.random()*2-1)*0.3;
+      const src=ctx.createBufferSource(); src.buffer=buf;
+      src.connect(g); src.start(t);
+    }
+  }
+  win_jingle(){
+    if(this._muted) return;
+    const ctx = this._ctx_get(); if(!ctx) return;
+    const notes=[523,659,784,1047,1319];
+    notes.forEach((f,i)=>{
+      const g=ctx.createGain(); g.connect(ctx.destination);
+      const t=ctx.currentTime+i*0.18;
+      g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.25,t+0.04);
+      g.gain.exponentialRampToValueAtTime(0.001,t+0.5);
+      const o=ctx.createOscillator(); o.type='triangle';
+      o.frequency.value=f; o.connect(g); o.start(t); o.stop(t+0.5);
+    });
+  }
+}
+const Audio = new AudioService();
+
+// ============================================================
+// ANALYTICS SERVICE
+// ============================================================
+const Analytics = {
+  _events: JSON.parse(localStorage.getItem('knock_analytics')||'[]'),
+  track(event, data={}){
+    const entry = { event, ts: Date.now(), ...data };
+    this._events.push(entry);
+    if(this._events.length > 200) this._events.shift();
+    try{ localStorage.setItem('knock_analytics', JSON.stringify(this._events)); }catch(e){}
+    // Hook: replace with real analytics (gtag, mixpanel, etc.)
+    console.log('[Analytics]', event, data);
+  },
+  gameStart(playerName){ this.track('game_start',{player:playerName, ts_human: new Date().toISOString()}); },
+  knock(playerName, handSize){ this.track('knock',{player:playerName, handSize}); },
+  gameWin(playerName, turnsEstimate){ this.track('game_win',{winner:playerName, turnsEstimate}); },
+  getEvents(){ return this._events; },
+};
+
+// ============================================================
+// CONSTANTS (derived from CONFIG for convenience)
+// ============================================================
+const {SUITS,RANKS,RANK_VAL,PICK_VAL,SUIT_TIE,AI_NAMES} = CONFIG;
+
+// ============================================================
+// GAME STATE
+// ============================================================
+let G = null;          // main game state
+let PICK = null;       // pick-phase state
+let selectedCards = [];
+let eightComboMode = false;
+let animating = false;
+let turnCounter = 0;
+
+// ── TOURNAMENT STATE ──
+let T = null; // { players:[{name,balance,isHuman,eliminated}], roundNum, ante }
+const ANTE = 500; // MWK 500 per round
+const MIN_BAL = 5000;
+const MAX_BAL = 7500;
+
+// ============================================================
+// DECK
+// ============================================================
+function createDeck(){
+  const d=[];
+  for(const s of SUITS) for(const r of RANKS) d.push({rank:r,suit:s});
+  return d;
+}
+// ── PROVABLY FAIR shuffle ──
+// Before each round a random seed is generated and its SHA-256 hash is shown as a commitment.
+// Every shuffle in that round derives a unique sub-seed from (master_seed + shuffle_counter)
+// so no two shuffles ever share state, and the deck order can never repeat across rounds.
+// After the round the master seed is revealed — verify: SHA-256(seed) == shown commitment.
+let _fairSeed = '';
+let _fairCommitment = '';
+let _shuffleCounter = 0; // incremented per shuffle call — each gets a unique sub-seed
+
+async function hashSeed(seed){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(seed));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+// Seeded PRNG (mulberry32)
+function seededRng(seed32){
+  let s = seed32 >>> 0;
+  return function(){
+    s += 0x6D2B79F5;
+    let t = Math.imul(s ^ s>>>15, 1 | s);
+    t = t + Math.imul(t ^ t>>>7, 61 | t) ^ t;
+    return ((t ^ t>>>14) >>> 0) / 4294967296;
+  };
+}
+
+function strToSeed(str){
+  // FNV-1a hash of string → 32-bit int
+  let h = 2166136261 >>> 0;
+  for(let i=0;i<str.length;i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  return h;
+}
+
+function seededShuffle(a, rng){
+  for(let i=a.length-1;i>0;i--){
+    const j=Math.floor(rng()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+
+function shuffle(a){
+  if(_fairSeed){
+    // Each shuffle gets a unique sub-seed: FNV(masterSeed + ":" + counter)
+    // This guarantees different card orders even if called multiple times per round
+    _shuffleCounter++;
+    const subSeedStr = _fairSeed + ':' + _shuffleCounter;
+    return seededShuffle(a, seededRng(strToSeed(subSeedStr)));
+  }
+  // Fallback (before first round seed is generated)
+  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+  return a;
+}
+
+async function generateFairSeed(){
+  // Seed = timestamp + 8 cryptographically random bytes — never repeats
+  const rand = Array.from(crypto.getRandomValues(new Uint8Array(8)))
+    .map(b=>b.toString(16).padStart(2,'0')).join('');
+  _fairSeed = 'knock-' + Date.now() + '-' + rand;
+  _shuffleCounter = 0; // reset counter for new round
+  _fairCommitment = await hashSeed(_fairSeed);
+  return _fairCommitment;
+}
+
+function showFairBadge(commitment){
+  let badge = document.getElementById('fair-badge');
+  if(!badge){
+    badge = document.createElement('div');
+    badge.id = 'fair-badge';
+    badge.style.cssText = `
+      position:fixed;bottom:8px;left:8px;z-index:50;
+      font-family:'Cinzel',serif;font-size:0.52rem;letter-spacing:0.05em;
+      color:rgba(201,168,76,0.45);cursor:pointer;max-width:180px;
+      line-height:1.4;pointer-events:all;
+    `;
+    document.body.appendChild(badge);
+  }
+  const short = commitment.slice(0,16)+'...';
+  badge.innerHTML = `🔒 Provably Fair<br><span style="font-size:0.48rem;color:rgba(201,168,76,0.3)">${short}</span>`;
+  badge.title = `Round seed commitment (SHA-256):\n${commitment}\n\nClick after round to verify.`;
+  badge.onclick = () => {
+    const msg = _fairSeedUsed
+      ? 'Seed: ' + _fairSeed + '\nHash: ' + _fairCommitment + '\n\nVerify: SHA-256(seed) == hash above'
+      : 'Commitment: ' + _fairCommitment + '\n\n(Seed will be revealed after this round)';
+    alert(msg);
+  };
+}
+function cardColor(s){return(s==='H'||s==='D')?'red':'black';}
+
+// ============================================================
+// PICK PHASE
+// ============================================================
+function startGame(){
+  const humanName = document.getElementById('player-name-input').value.trim()||'You';
+
+  // Init tournament — assign random balances
+  const allNames = [...AI_NAMES, humanName];
+  T = {
+    roundNum: 0,
+    ante: ANTE,
+    players: allNames.map((name, i) => ({
+      name,
+      isHuman: i === 4,
+      balance: Math.floor(Math.random() * (MAX_BAL - MIN_BAL + 1) / 500) * 500 + MIN_BAL,
+      eliminated: false,
+    }))
+  };
+
+  startNewRound();
+}
+
+async function startNewRound(){
+  T.roundNum++;
+  const activePlayers = T.players
+    .filter(tp => !tp.eliminated)
+    .map(tp => ({
+      name: tp.name,
+      hand: [],
+      isHuman: tp.isHuman,
+      knocked: false,
+    }));
+
+  // Generate and commit seed BEFORE any shuffle — ensures verifiability
+  const commitment = await generateFairSeed();
+  showFairBadge(commitment);
+
+  const pool = shuffle(createDeck()).slice(0, 10);
+  PICK = { players: activePlayers, cards: pool, picks: {}, humanPicked: false, done: false };
+
+  document.getElementById('title-screen').classList.add('hidden');
+  document.getElementById('win-screen').classList.add('hidden');
+  document.getElementById('pick-screen').classList.remove('hidden');
+  renderPickScreen();
+
+  Audio.shuffle();
+  const humanInRound = activePlayers.some(p=>p.isHuman);
+  activePlayers.forEach((_,i)=>{
+    // Auto-pick for all AI players; if human is eliminated, auto-pick for everyone
+    if(!activePlayers[i].isHuman || !humanInRound){
+      const delay = 600 + i*700 + Math.random()*400;
+      setTimeout(()=>aiPickCard(i), delay);
+    }
+  });
+  // If human eliminated — hide pick screen, show "watching" overlay
+  if(!humanInRound){
+    document.getElementById('pick-status').textContent = 'Watching AI finish the tournament...';
+  }
+}
+
+function renderPickScreen(){
+  const pr = document.getElementById('pick-players-row');
+  pr.innerHTML='';
+  PICK.players.forEach((p,i)=>{
+    const chip = document.createElement('div');
+    chip.className='pick-player-chip'+(PICK.picks[i]?' done':'');
+    chip.id=`pick-chip-${i}`;
+    chip.textContent = PICK.picks[i] ? p.name+' ✓' : p.name;
+    pr.appendChild(chip);
+  });
+  const cr = document.getElementById('pick-cards-row');
+  cr.innerHTML='';
+  PICK.cards.forEach((card,ci)=>{
+    const el=document.createElement('div');
+    const takenBy=Object.entries(PICK.picks).find(([,v])=>v.cardIdx===ci);
+    if(takenBy){
+      const [pIdx]=takenBy;
+      const c=PICK.picks[pIdx].card;
+      el.className=`pick-card face-revealed ${(c.suit==='H'||c.suit==='D')?'red-card':'black-card'}`;
+      el.innerHTML=`<div class="pr t">${c.rank}</div><div class="pc">${SYM[c.suit]}</div><div class="pr b">${c.rank}</div>`;
+    } else {
+      el.className='pick-card'+(PICK.humanPicked?' disabled':'');
+      if(!PICK.humanPicked) el.onclick=()=>humanPickCard(ci);
+    }
+    cr.appendChild(el);
+  });
+}
+
+function humanPickCard(cardIdx){
+  const hIdx = PICK.players.findIndex(p=>p.isHuman);
+  if(hIdx===-1||PICK.humanPicked||PICK.picks[hIdx]) return;
+  PICK.humanPicked=true;
+  PICK.picks[hIdx]={cardIdx,card:PICK.cards[cardIdx]};
+  const cards=document.querySelectorAll('.pick-card');
+  if(cards[cardIdx]) cards[cardIdx].className='pick-card picked-by-me';
+  Audio.card_slide();
+  updatePickStatus(); checkPickDone();
+}
+
+function aiPickCard(pIdx){
+  if(PICK.done) return;
+  const taken=new Set(Object.values(PICK.picks).map(v=>v.cardIdx));
+  const available=PICK.cards.map((_,i)=>i).filter(i=>!taken.has(i));
+  if(!available.length) return;
+  const ci=available[Math.floor(Math.random()*available.length)];
+  PICK.picks[pIdx]={cardIdx:ci,card:PICK.cards[ci]};
+  const chip=document.getElementById(`pick-chip-${pIdx}`);
+  if(chip){chip.className='pick-player-chip done';chip.textContent=PICK.players[pIdx].name+' ✓';}
+  renderPickScreen(); updatePickStatus(); checkPickDone();
+}
+
+function updatePickStatus(){
+  const done=Object.keys(PICK.picks).length, total=PICK.players.length;
+  document.getElementById('pick-status').textContent=
+    done<total ? `${done} of ${total} players have picked...` : 'Revealing cards...';
+}
+
+function checkPickDone(){
+  if(Object.keys(PICK.picks).length<PICK.players.length) return;
+  PICK.done=true;
+  renderPickScreen();
+
+  // Tie-breaker: lowest PICK_VAL wins; on tie, lowest SUIT_TIE wins (Diamonds < Clubs < Hearts < Spades)
+  let best={val:Infinity,suitRank:Infinity,idx:0};
+  Object.entries(PICK.picks).forEach(([pIdxStr,{card}])=>{
+    const v=PICK_VAL[card.rank], sr=SUIT_TIE[card.suit], pi=parseInt(pIdxStr);
+    if(v<best.val||(v===best.val&&sr<best.suitRank)){
+      best={val:v,suitRank:sr,idx:pi};
+    }
+  });
+  const startIdx=best.idx;
+
+  const winChip=document.getElementById(`pick-chip-${startIdx}`);
+  if(winChip){winChip.className='pick-player-chip winner';winChip.textContent=PICK.players[startIdx].name+' goes first!';}
+  const w=PICK.picks[startIdx];
+  document.getElementById('pick-status').textContent=
+    `${PICK.players[startIdx].name} picked ${w.card.rank}${SYM[w.card.suit]} (${best.val}) — they go first!`;
+
+  setTimeout(()=>beginActualGame(PICK.players,startIdx),2800);
+}
+
+function beginActualGame(players,startIdx){
+  document.getElementById('pick-screen').classList.add('hidden');
+
+  // Deck shuffle — uses next sub-seed counter (unique from pick pool shuffle)
+  const deck=shuffle(createDeck());
+  players.forEach(p=>{p.hand=[];p.knocked=false;});
+  for(let i=0;i<4;i++) players.forEach(p=>p.hand.push(deck.pop()));
+
+  let top=deck.pop(),tries=0;
+  while(CONFIG.SPECIAL_CARDS.includes(top.rank)&&tries<20){deck.unshift(top);shuffle(deck);top=deck.pop();tries++;}
+
+  const hIdx = players.findIndex(p=>p.isHuman);
+  G={
+    players, humanIdx: hIdx >= 0 ? hIdx : 4, deck,
+    discardPile:[top],
+    direction:1,
+    currentPlayer:startIdx,
+    activeSuit:null,
+    penaltyDraw:0, penaltyActive:false,
+    awaitingSuit:false, pendingSkip:false,
+    gameOver:false, _aceOnDone:null,
+  };
+  selectedCards=[];eightComboMode=false;animating=false;turnCounter=0;
+
+  document.getElementById('game-screen').classList.remove('hidden');
+  logClear();
+  log(`Game begins! ${players[startIdx].name} goes first.`,true);
+  Audio.shuffle();
+  Analytics.gameStart(players[G.humanIdx].name);
+  saveState();
+  render();
+
+  if(!G.players[G.currentPlayer].isHuman) scheduleAI();
+  else startTurnTimer();
+}
+
+function resetGame(){
+  stopTurnTimer();
+  clearSavedState();
+  ['win-screen','pick-screen','game-screen','tourney-screen'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  document.getElementById('title-screen').classList.remove('hidden');
+  G=null;PICK=null;T=null;
+}
+
+// ============================================================
+// STATE PERSISTENCE
+// ============================================================
+function saveState(){
+  if(!G) return;
+  try{
+    localStorage.setItem('knock_state', JSON.stringify({
+      G:{
+        players: G.players.map(p=>({...p})),
+        humanIdx:G.humanIdx, direction:G.direction,
+        currentPlayer:G.currentPlayer, activeSuit:G.activeSuit,
+        penaltyDraw:G.penaltyDraw, penaltyActive:G.penaltyActive,
+        gameOver:G.gameOver,
+        deck:G.deck, discardPile:G.discardPile,
+      },
+      playerName: G.players[G.humanIdx].name,
+      turnCounter,
+    }));
+  }catch(e){}
+}
+
+function loadState(){
+  try{
+    const raw=localStorage.getItem('knock_state');
+    if(!raw) return false;
+    const {G:gs,playerName,turnCounter:tc}=JSON.parse(raw);
+    if(!gs||gs.gameOver) return false;
+    G={...gs, awaitingSuit:false, pendingSkip:false, _aceOnDone:null};
+    turnCounter=tc||0;
+    document.getElementById('player-name-input').value=playerName;
+    document.getElementById('title-screen').classList.add('hidden');
+    document.getElementById('game-screen').classList.remove('hidden');
+    logClear();
+    log('Game restored!',true);
+    render();
+    if(!G.players[G.currentPlayer].isHuman) scheduleAI();
+    else startTurnTimer();
+    return true;
+  }catch(e){ return false; }
+}
+
+function clearSavedState(){
+  try{ localStorage.removeItem('knock_state'); }catch(e){}
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+function getTop(){return G.discardPile[G.discardPile.length-1];}
+function effSuit(){return G.activeSuit||getTop().suit;}
+function nextIdx(from,dir){const n=G.players.length;return((from+dir)%n+n)%n;}
+
+function canPlay(card){
+  if(G.penaltyActive) return card.rank==='2';
+  const top=getTop(),suit=effSuit();
+  if(card.rank==='A') return card.suit===suit||top.rank==='A';
+  if(card.rank==='8') return card.suit===suit||top.rank==='8';
+  return card.suit===suit||card.rank===top.rank;
+}
+
+function canCombo(eights,support){
+  if(!support||!eights.length) return false;
+  // First 8 must be playable on the current pile
+  if(!canPlay(eights[0])) return false;
+  // Subsequent 8s chain freely (any 8 on any 8) — no suit restriction between 8s
+  // Support card (non-8, or Jack) must match the LAST 8's suit
+  const lastSuit=eights[eights.length-1].suit;
+  if(support.suit!==lastSuit) return false;
+  // Support can be any non-8 of that suit, OR a Jack of that suit
+  return support.rank!=='8';
+}
+
+function drawFromDeck(player){
+  if(G.deck.length===0) reshuffleDeck();
+  if(G.deck.length>0) player.hand.push(G.deck.pop());
+}
+
+function reshuffleDeck(){
+  if(G.discardPile.length<=1) return;
+  const top=G.discardPile.pop();
+  G.deck=shuffle(G.discardPile);
+  G.discardPile=[top];
+  log('Deck reshuffled.',true);
+  Audio.shuffle();
+}
+
+// ============================================================
+// TURN ADVANCEMENT
+// ============================================================
+function advanceTurn(skip){
+  stopTurnTimer();
+  G.awaitingSuit=false;G.pendingSkip=false;
+  let next=nextIdx(G.currentPlayer,G.direction);
+  if(skip){
+    log(`${G.players[next].name}'s turn is skipped!`);
+    next=nextIdx(next,G.direction);
+  }
+  G.currentPlayer=next;
+  turnCounter++;
+  saveState();
+  render();
+  if(!G.players[G.currentPlayer].isHuman&&!G.gameOver) scheduleAI();
+  else if(G.players[G.currentPlayer].isHuman&&!G.gameOver) startTurnTimer();
+}
+
+// ============================================================
+// TURN TIMER
+// ============================================================
+const CIRCUMFERENCE=138.2;
+let timerInterval=null,timerRemaining=0;
+
+function startTurnTimer(){
+  stopTurnTimer();
+  if(!G||G.gameOver||G.awaitingSuit) return;
+  if(G.currentPlayer!==G.humanIdx) return;
+  timerRemaining=CONFIG.TIMER_SECS;
+  updateTimerDisplay(timerRemaining);
+  document.getElementById('turn-timer').classList.add('visible');
+  timerInterval=setInterval(()=>{
+    timerRemaining=Math.round((timerRemaining-0.5)*10)/10;
+    updateTimerDisplay(timerRemaining);
+    if(timerRemaining<=0){stopTurnTimer();timeoutPunishment();}
+  },500);
+}
+
+function stopTurnTimer(){
+  if(timerInterval){clearInterval(timerInterval);timerInterval=null;}
+  const el=document.getElementById('turn-timer');
+  if(el) el.classList.remove('visible');
+}
+
+function updateTimerDisplay(secs){
+  const num=document.getElementById('timer-number');
+  const ring=document.getElementById('timer-ring-fg');
+  if(!num||!ring) return;
+  const s=Math.max(secs,0);
+  num.textContent=Math.ceil(s);
+  ring.style.strokeDashoffset=CIRCUMFERENCE*(1-(s/CONFIG.TIMER_SECS));
+  const urgent=s<=2;
+  num.className='timer-number'+(urgent?' urgent':'');
+  ring.className='timer-ring-fg'+(urgent?' urgent':'');
+}
+
+function timeoutPunishment(){
+  if(!G||G.gameOver||animating||G.awaitingSuit) return;
+  if(G.currentPlayer!==G.humanIdx) return;
+  selectedCards=[];eightComboMode=false;
+  const name=G.players[G.humanIdx].name;
+  showToast('Time up! '+name+' draws 1 and loses their turn.');
+  log(name+' timed out — draws 1 card.',true);
+  animating=true;
+  doDrawCards(G.humanIdx,1,()=>{animating=false;advanceTurn(false);});
+}
+
+// ============================================================
+// APPLY EFFECT
+// ============================================================
+function applyEffect(card,playerIdx,onDone,isSoloEight){
+  const player=G.players[playerIdx];
+  let skip=false;
+  if(card.rank==='8'&&isSoloEight){
+    log(`${player.name} draws 1 (solo 8 penalty).`);
+    doDrawCards(playerIdx,1,()=>onDone(false));
+    return;
+  } else if(card.rank==='J'){
+    skip=true;
+    log('Next player skipped!');
+  } else if(card.rank==='2'){
+    if(G.penaltyActive){
+      // Counter-2 cancels the penalty — both 2s neutralise each other
+      G.penaltyDraw=0;
+      G.penaltyActive=false;
+      log('2 cancelled! Next player plays freely.');
+    } else {
+      G.penaltyDraw=CONFIG.PENALTY_DRAW_COUNT;
+      G.penaltyActive=true;
+      log('Next player must draw 2!');
+    }
+  } else if(card.rank==='A'){
+    if(player.isHuman){
+      stopTurnTimer();
+      G.awaitingSuit=true;G.pendingSkip=skip;
+      G._aceOnDone=onDone;
+      render();
+      document.getElementById('suit-modal').classList.remove('hidden');
+      return;
+    } else {
+      const suit=aiBestSuit(player);
+      G.activeSuit=suit;
+      log(`${player.name} declares ${SYM[suit]}`);
+    }
+  }
+  onDone(skip);
+}
+
+// ============================================================
+// PLAY CARD (single)
+// ============================================================
+function playSingleCard(pIdx,handIdx,onDone,isSoloEight){
+  const player=G.players[pIdx];
+  const card=player.hand[handIdx];
+  player.hand.splice(handIdx,1);
+  G.activeSuit=null;
+  log(`${player.name} plays ${card.rank}${SYM[card.suit]}`);
+  Audio.card_slide();
+  checkKnock(player);
+
+  flyToDiscard(card,pIdx,()=>{
+    G.discardPile.push(card);
+    render();
+    if(player.hand.length===0){endGame(pIdx);return;}
+    applyEffect(card,pIdx,onDone,isSoloEight);
+  });
+}
+
+// ============================================================
+// PLAY 8 COMBO
+// ============================================================
+function playCombo(pIdx,eightIdxs,supportIdx,onDone){
+  const player=G.players[pIdx];
+  const eights=eightIdxs.map(i=>player.hand[i]);
+  const support=player.hand[supportIdx];
+  [...eightIdxs,supportIdx].sort((a,b)=>b-a).forEach(i=>player.hand.splice(i,1));
+  G.activeSuit=null;
+  const numE=eights.length,reverses=numE%2!==0;
+  log(`${player.name} plays ${numE>1?numE+'x ':''}8 + ${support.rank}${SYM[support.suit]}`);
+  checkKnock(player);
+  const seq=[...eights,support];
+  function next(i){
+    if(i>=seq.length){
+      if(reverses){G.direction*=-1;log('Direction reversed!');}
+      render();
+      if(player.hand.length===0){endGame(pIdx);return;}
+      applyEffect(support,pIdx,onDone);
+      return;
+    }
+    Audio.card_slide();
+    flyToDiscard(seq[i],pIdx,()=>{
+      G.discardPile.push(seq[i]);
+      render();
+      setTimeout(()=>next(i+1),130);
+    });
+  }
+  next(0);
+}
+
+// ============================================================
+// DRAW CARDS — mid-action reshuffle bulletproof
+// ============================================================
+function doDrawCards(pIdx,count,onDone){
+  const player=G.players[pIdx];
+  function one(rem){
+    if(rem<=0){
+      if(player.hand.length>1) player.knocked=false;
+      onDone();
+      return;
+    }
+    // Reshuffle if needed BEFORE each individual draw
+    if(G.deck.length===0) reshuffleDeck();
+    if(G.deck.length===0){onDone();return;} // truly empty (impossible but safe)
+    flyFromDeck(pIdx,()=>{
+      drawFromDeck(player);
+      render();
+      setTimeout(()=>one(rem-1),260);
+    });
+  }
+  one(count);
+}
+
+// ============================================================
+// KNOCK — visual event
+// ============================================================
+function checkKnock(player){
+  if(player.hand.length===1&&!player.knocked){
+    player.knocked=true;
+    log(`${player.name} KNOCKS! ✋`,true);
+    Analytics.knock(player.name, player.hand.length);
+    triggerKnockEvent(player.name);
+  }
+}
+
+function triggerKnockEvent(playerName){
+  Audio.knock_slam();
+  // Screen shake
+  const gs=document.getElementById('game-screen');
+  gs.classList.remove('shake');
+  void gs.offsetWidth; // reflow to restart animation
+  gs.classList.add('shake');
+  setTimeout(()=>gs.classList.remove('shake'),600);
+  // Knock overlay
+  const overlay=document.getElementById('knock-overlay');
+  document.getElementById('knock-burst-text').textContent=`✋ ${playerName.toUpperCase()} KNOCKS!`;
+  overlay.classList.add('show');
+  setTimeout(()=>overlay.classList.remove('show'),1600);
+}
+
+// ============================================================
+// HUMAN ACTIONS
+// ============================================================
+function playerPlayCard(cardIdx){
+  if(!G||G.gameOver||G.awaitingSuit||animating) return;
+  if(G.currentPlayer!==G.humanIdx) return;
+  stopTurnTimer();
+
+  const player=G.players[G.humanIdx];
+  const card=player.hand[cardIdx];
+
+  if(eightComboMode){
+    if(selectedCards.includes(cardIdx)){
+      selectedCards=selectedCards.filter(i=>i!==cardIdx);
+      if(selectedCards.length===0) eightComboMode=false;
+      render(); return;
+    }
+    if(card.rank==='8'){
+      // Any 8 can chain onto a previous 8 — no suit restriction
+      selectedCards.push(cardIdx);render();return;
+    }
+    const eights=selectedCards.map(i=>player.hand[i]);
+    if(!canCombo(eights,card)){showToast('Support must match the 8 suit!');startTurnTimer();return;}
+    const ec=[...selectedCards];
+    selectedCards=[];eightComboMode=false;
+    animating=true;
+    playCombo(G.humanIdx,ec,cardIdx,(skip)=>{animating=false;advanceTurn(skip);});
+    return;
+  }
+
+  if(card.rank==='8'&&!G.penaltyActive){
+    if(!canPlay(card)){showToast('Cannot play that 8!');startTurnTimer();return;}
+
+    // Finishing rule: if ALL remaining cards are 8s, play them ALL immediately — no support, no draw penalty
+    const allEights = player.hand.every(h => h.rank==='8');
+    if(allEights){
+      const allCards = [...player.hand];
+      player.hand = [];
+      G.activeSuit = null;
+      log(`${player.name} finishes with ${allCards.length > 1 ? allCards.length + 'x 8!' : '8!'}`, true);
+      Audio.card_slide();
+      animating = true;
+      function flyFinishHuman(i){
+        if(i >= allCards.length){
+          render();
+          endGame(G.humanIdx);
+          return;
+        }
+        flyToDiscard(allCards[i], G.humanIdx, ()=>{
+          G.discardPile.push(allCards[i]);
+          render();
+          setTimeout(()=>flyFinishHuman(i+1), 140);
+        });
+      }
+      flyFinishHuman(0);
+      return;
+    }
+
+    // Always enter combo-selection mode when an 8 is tapped.
+    // Player can add more 8s, add a support card, or hit "Play Solo" to throw solo.
+    const hasOther8 = player.hand.some((h,i)=>i!==cardIdx&&h.rank==='8');
+    if(hasOther8){
+      // Multiple 8s available — enter combo mode so player can pick which to throw
+      selectedCards=[cardIdx]; eightComboMode=true;
+      render(); return;
+    }
+    // Only one 8 in hand — check for support
+    const hasSupport=player.hand.some((h,i)=>i!==cardIdx&&h.suit===card.suit&&h.rank!=='8');
+    if(hasSupport){
+      selectedCards=[cardIdx];eightComboMode=true;
+      render(); return;
+    }
+    // Single 8, no support, non-finishing — solo with draw-1 penalty
+    animating=true;
+    playSingleCard(G.humanIdx,cardIdx,(skip)=>{animating=false;advanceTurn(skip);},true);
+  }
+
+  if(!canPlay(card)){showToast('Cannot play that card!');startTurnTimer();return;}
+  animating=true;
+  playSingleCard(G.humanIdx,cardIdx,(skip)=>{animating=false;advanceTurn(skip);});
+}
+
+function playEightSolo(){
+  if(!eightComboMode||!selectedCards.length||animating) return;
+  const eightIdxs=[...selectedCards];
+  selectedCards=[];eightComboMode=false;
+
+  const player=G.players[G.humanIdx];
+  if(!canPlay(player.hand[eightIdxs[0]])){showToast('Cannot play that 8!');render();return;}
+
+  // Check if these are ALL the cards in hand (finishing move — no draw penalty)
+  const isFinishing = eightIdxs.length === player.hand.length && player.hand.every(c=>c.rank==='8');
+
+  const cards=eightIdxs.map(i=>player.hand[i]);
+  eightIdxs.slice().sort((a,b)=>b-a).forEach(i=>player.hand.splice(i,1));
+  G.activeSuit=null;
+  log(`${player.name} plays ${cards.length>1?cards.length+'x ':''}8${isFinishing?' — finishes!':' solo'}`);
+  Audio.card_slide();
+  checkKnock(player);
+
+  function flyNext(i){
+    if(i>=cards.length){
+      render();
+      if(player.hand.length===0){endGame(G.humanIdx);return;}
+      if(isFinishing){
+        // All 8s were finishing cards — no draw penalty
+        animating=false;
+        advanceTurn(false);
+        return;
+      }
+      // Normal solo 8: draw 1 penalty
+      log(`${player.name} draws 1 (solo 8 penalty).`);
+      animating=true;
+      doDrawCards(G.humanIdx,1,()=>{animating=false;advanceTurn(false);});
+      return;
+    }
+    flyToDiscard(cards[i],G.humanIdx,()=>{
+      G.discardPile.push(cards[i]);
+      render();
+      setTimeout(()=>flyNext(i+1),130);
+    });
+  }
+  animating=true;
+  flyNext(0);
+}
+
+function cancelCombo(){
+  selectedCards=[];eightComboMode=false;
+  render();
+  startTurnTimer();
+}
+
+function playerDraw(){
+  if(!G||G.gameOver||G.awaitingSuit||animating) return;
+  if(G.currentPlayer!==G.humanIdx) return;
+  stopTurnTimer();
+  if(eightComboMode) cancelCombo();
+
+  const cnt=G.penaltyActive?G.penaltyDraw:1;
+  if(G.penaltyActive){G.penaltyActive=false;G.penaltyDraw=0;}
+  log(`${G.players[G.humanIdx].name} draws ${cnt} card${cnt>1?'s':''}.`);
+  animating=true;
+  doDrawCards(G.humanIdx,cnt,()=>{animating=false;advanceTurn(false);});
+}
+
+function declareSuit(suit){
+  document.getElementById('suit-modal').classList.add('hidden');
+  G.activeSuit=suit;G.awaitingSuit=false;
+  log(`${G.players[G.humanIdx].name} declares ${SYM[suit]}`);
+  const cb=G._aceOnDone; G._aceOnDone=null;
+  if(cb) cb(G.pendingSkip||false);
+  else{animating=false;advanceTurn(false);}
+}
+
+// ============================================================
+// AI
+// ============================================================
+function scheduleAI(){
+  if(!G||G.gameOver) return;
+  setTimeout(aiTurn, CONFIG.AI_THINK_MIN+Math.random()*CONFIG.AI_THINK_JITTER);
+}
+
+function aiTurn(){
+  if(!G||G.gameOver) return;
+  if(animating){setTimeout(aiTurn,200);return;}
+  const idx=G.currentPlayer;
+  const player=G.players[idx];
+  if(player.isHuman) return;
+
+  if(G.penaltyActive){
+    const ti=player.hand.findIndex(c=>c.rank==='2');
+    if(ti!==-1&&Math.random()>0.25){
+      animating=true;
+      playSingleCard(idx,ti,(skip)=>{animating=false;advanceTurn(skip);});
+    } else {
+      const cnt=G.penaltyDraw;
+      G.penaltyActive=false;G.penaltyDraw=0;
+      log(`${player.name} draws ${cnt} cards.`);
+      animating=true;
+      doDrawCards(idx,cnt,()=>{animating=false;advanceTurn(false);});
+    }
+    return;
+  }
+
+  const playable=player.hand.map((c,i)=>canPlay(c)?i:-1).filter(i=>i!==-1);
+  if(!playable.length){
+    log(`${player.name} draws a card.`);
+    animating=true;
+    doDrawCards(idx,1,()=>{animating=false;advanceTurn(false);});
+    return;
+  }
+
+  // Try 8-combo: chain all available 8s, find support matching LAST 8's suit
+  const e8=playable.filter(i=>player.hand[i].rank==='8');
+  if(e8.length&&Math.random()>0.3){
+    const chainIdxs=[...e8]; // all 8s
+    const lastSuit=player.hand[chainIdxs[chainIdxs.length-1]].suit;
+
+    // Finishing move: if ALL remaining cards are 8s, play them all (no draw penalty)
+    const allEights = player.hand.every(c=>c.rank==='8');
+    if(allEights && chainIdxs.length === player.hand.length){
+      // Play all 8s sequentially, no support needed
+      const cards=chainIdxs.map(i=>player.hand[i]);
+      chainIdxs.slice().sort((a,b)=>b-a).forEach(i=>player.hand.splice(i,1));
+      G.activeSuit=null;
+      log(`${player.name} plays all 8s to finish!`);
+      checkKnock(player);
+      function flyFinish(fi){
+        if(fi>=cards.length){render();if(player.hand.length===0){endGame(idx);}return;}
+        Audio.card_slide();
+        flyToDiscard(cards[fi],idx,()=>{G.discardPile.push(cards[fi]);render();setTimeout(()=>flyFinish(fi+1),130);});
+      }
+      animating=true;flyFinish(0);
+      return;
+    }
+
+    // Support: non-8 of lastSuit (Jack counts)
+    const si=player.hand.findIndex((c,i)=>!chainIdxs.includes(i)&&c.rank!=='8'&&c.suit===lastSuit);
+    if(si!==-1){
+      animating=true;
+      playCombo(idx,chainIdxs,si,(skip)=>{animating=false;advanceTurn(skip);});
+      return;
+    }
+    // No support — solo play only if single 8
+    if(chainIdxs.length===1){
+      animating=true;
+      playSingleCard(idx,chainIdxs[0],(skip)=>{animating=false;advanceTurn(skip);},true);
+      return;
+    }
+  }
+
+  // Best single card
+  let chosen=playable[0];
+  for(const r of ['A','J','2']){
+    const f=playable.find(i=>player.hand[i].rank===r);
+    if(f!==undefined){chosen=f;break;}
+  }
+  const isSolo8=player.hand[chosen]?.rank==='8';
+  animating=true;
+  playSingleCard(idx,chosen,(skip)=>{animating=false;advanceTurn(skip);},isSolo8);
+}
+
+function aiBestSuit(player){
+  const cnt={S:0,H:0,C:0,D:0};
+  player.hand.forEach(c=>cnt[c.suit]++);
+  return Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0][0];
+}
+
+// ============================================================
+// END GAME
+// ============================================================
+function endGame(wIdx){
+  G.gameOver=true;
+  clearSavedState();
+  stopTurnTimer();
+  const winnerName = G.players[wIdx].name;
+  log(`${winnerName} wins the round!`, true);
+  Analytics.gameWin(winnerName, turnCounter);
+  Audio.win_jingle();
+  setTimeout(()=>{
+    resolveRound(wIdx);
+  }, 800);
+}
+
+function resolveRound(wIdx){
+  const roundPlayers = G.players; // players in this round
+  const winnerName = roundPlayers[wIdx].name;
+
+  // Collect ante from all active players — they paid K500 to play
+  // Losers pay ANTE to winner; if they can't afford it they pay what they have
+  const tPlayers = T.players; // full tournament roster
+
+  // Pot = sum of antes from all round participants
+  let pot = 0;
+  roundPlayers.forEach(rp => {
+    const tp = tPlayers.find(p => p.name === rp.name);
+    if(!tp) return;
+    const pays = Math.min(tp.balance, ANTE);
+    tp.balance -= pays;
+    pot += pays;
+    tp._roundPaid = pays;
+    tp._roundDelta = -pays; // will update winner below
+  });
+
+  // Winner gets the whole pot
+  const tWinner = tPlayers.find(p => p.name === winnerName);
+  if(tWinner){
+    tWinner.balance += pot;
+    tWinner._roundDelta = pot - (tWinner._roundPaid || 0);
+  }
+
+  // Eliminate anyone who now has K0
+  tPlayers.forEach(tp => {
+    if(tp.balance <= 0 && !tp.eliminated){
+      tp.balance = 0;
+      tp.eliminated = true;
+    }
+  });
+
+  // Check how many still have money
+  const stillIn = tPlayers.filter(p => !p.eliminated);
+
+  showRoundResult(winnerName, pot, stillIn.length <= 1);
+}
+
+function showRoundResult(winnerName, pot, isFinal){
+  const tPlayers = T.players;
+  spawnConfetti();
+
+  const box = document.createElement('div');
+  box.className = 'round-result-box';
+
+  box.innerHTML = `
+    <div class="rr-title">Round ${T.roundNum}</div>
+    <div class="rr-winner">🏆 ${winnerName} wins the round</div>
+    <div class="rr-pot">Pot: MWK ${pot.toLocaleString()}</div>
+    <table class="rr-standings">
+      <thead><tr>
+        <th>Player</th><th>Balance</th><th>Change</th>
+      </tr></thead>
+      <tbody>
+        ${tPlayers.map(tp => {
+          const delta = tp._roundDelta !== undefined ? tp._roundDelta : 0;
+          const isWinner = tp.name === winnerName;
+          const isElim = tp.eliminated;
+          const rowClass = isElim ? 'elim-row' : isWinner ? 'winner-row' : '';
+          const deltaStr = delta >= 0
+            ? `<span class="rr-delta pos">+${delta.toLocaleString()}</span>`
+            : `<span class="rr-delta neg">${delta.toLocaleString()}</span>`;
+          return `<tr class="${rowClass}">
+            <td>${isWinner ? '🏆 ' : ''}${tp.name}${isElim ? ' ❌' : ''}</td>
+            <td>MWK ${tp.balance.toLocaleString()}</td>
+            <td>${deltaStr}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+  `;
+
+  // Clean up deltas
+  tPlayers.forEach(tp => { delete tp._roundDelta; delete tp._roundPaid; });
+
+  if(isFinal){
+    const champ = tPlayers.find(p => !p.eliminated) || tPlayers.sort((a,b)=>b.balance-a.balance)[0];
+    const btn = document.createElement('button');
+    btn.className = 'btn-primary';
+    btn.textContent = '🏆 See Champion';
+    btn.onclick = () => showTourneyWinner(champ);
+    box.appendChild(btn);
+  } else {
+    // Chip betting UI for next round
+    const betSection = document.createElement('div');
+    betSection.innerHTML = `
+      <div class="rr-note">Place your bet for Round ${T.roundNum + 1} (K500 chips)</div>
+      <div class="rr-chip-row" id="chip-tray">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+          <div class="chip c500" onclick="addChip(500)">K500</div>
+          <div class="chip-label">K500</div>
+        </div>
+      </div>
+      <div class="bet-display" id="bet-display-rr">Ante: <span>MWK 500</span></div>
+      <div class="rr-note" id="bet-note-rr">Standard ante is K500 &mdash; all players pay the same</div>
+    `;
+    box.appendChild(betSection);
+
+    const btnRow = document.createElement('div');
+    btnRow.className = 'rr-btn-row';
+
+    const humanStillIn = T.players.some(p=>p.isHuman&&!p.eliminated);
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'btn-primary';
+    nextBtn.textContent = humanStillIn ? `Deal Round ${T.roundNum + 1}` : `Watch Round ${T.roundNum + 1}`;
+    nextBtn.onclick = () => {
+      document.getElementById('win-screen').classList.add('hidden');
+      startNewRound();
+    };
+
+    const quitBtn = document.createElement('button');
+    quitBtn.className = 'btn-action danger';
+    quitBtn.textContent = humanStillIn ? 'Cash Out' : 'Leave Table';
+    quitBtn.onclick = resetGame;
+
+    btnRow.appendChild(nextBtn);
+    btnRow.appendChild(quitBtn);
+    box.appendChild(btnRow);
+
+    // If human is eliminated, auto-advance after 4 seconds
+    if(!humanStillIn){
+      const countdown = document.createElement('div');
+      countdown.className = 'rr-note';
+      countdown.style.color = 'rgba(201,168,76,0.5)';
+      countdown.textContent = 'Continuing automatically in 4s...';
+      box.appendChild(countdown);
+      let secs = 4;
+      const iv = setInterval(()=>{
+        secs--;
+        if(secs <= 0){
+          clearInterval(iv);
+          document.getElementById('win-screen').classList.add('hidden');
+          startNewRound();
+        } else {
+          countdown.textContent = `Continuing automatically in ${secs}s...`;
+        }
+      }, 1000);
+      // Cancel auto-advance if player clicks manually
+      nextBtn.addEventListener('click', ()=>clearInterval(iv), {once:true});
+      quitBtn.addEventListener('click', ()=>clearInterval(iv), {once:true});
+    }
+  }
+
+  const content = document.getElementById('round-result-content');
+  content.innerHTML = '';
+  content.appendChild(box);
+  document.getElementById('win-screen').classList.remove('hidden');
+}
+
+function showTourneyWinner(champ){
+  document.getElementById('win-screen').classList.add('hidden');
+  document.getElementById('tourney-title').textContent = champ.isHuman ? '🏆 YOU WIN!' : '🏆 CHAMPION!';
+  document.getElementById('tourney-winner').textContent = `${champ.name} takes everything`;
+  document.getElementById('tourney-prize').textContent = `Final balance: MWK ${champ.balance.toLocaleString()}`;
+  const c2 = document.getElementById('confetti-container-2');
+  if(c2){ c2.innerHTML=''; }
+  spawnConfetti2();
+  document.getElementById('tourney-screen').classList.remove('hidden');
+}
+
+function spawnConfetti2(){
+  const c = document.getElementById('confetti-container-2');
+  if(!c) return;
+  c.innerHTML = '';
+  const colors = ['#c9a84c','#e8c96a','#c0392b','#2980b9','#27ae60','#f5f0e8','#e74c3c'];
+  for(let i=0;i<90;i++){
+    const p=document.createElement('div'); p.className='confetti-piece';
+    p.style.cssText=`left:${Math.random()*100}%;background:${colors[i%colors.length]};animation-duration:${2+Math.random()*3}s;animation-delay:${Math.random()*1.5}s;transform:rotate(${Math.random()*360}deg);width:${6+Math.random()*10}px;height:${8+Math.random()*14}px;`;
+    c.appendChild(p);
+  }
+}
+
+// ============================================================
+// ANIMATIONS — fly cards
+// ============================================================
+function getDiscardRect(){return document.getElementById('discard-pile-display').getBoundingClientRect();}
+function getDrawRect(){return document.getElementById('draw-pile').getBoundingClientRect();}
+
+function getPlayerOrigin(pIdx){
+  const p=G.players[pIdx];
+  if(p.isHuman){
+    const r=document.getElementById('player-hand').getBoundingClientRect();
+    return{x:r.left+r.width/2, y:r.top+30};
+  }
+  // Find the player zone by data-seat attribute
+  const zone = document.querySelector(`.player-zone[data-seat="${pIdx}"]`);
+  if(zone){
+    const r=zone.getBoundingClientRect();
+    return{x:r.left+r.width/2, y:r.top+r.height/2};
+  }
+  // Fallback: compute from dynamic polygon geometry
+  const W=window.innerWidth, H=window.innerHeight;
+  const cx=W/2, cy=H/2;
+  const r2=Math.min(cx*0.72,(H-170)*0.44,280);
+  const n=G.players.length;
+  // Find which AI slot this player is in
+  let aiSlot=0;
+  for(let i=0;i<G.players.length;i++){
+    if(!G.players[i].isHuman) aiSlot++;
+    if(i===pIdx) break;
+  }
+  const angleDeg = 90 + aiSlot*(360/n);
+  const rad = angleDeg*Math.PI/180;
+  const vx = cx + r2*Math.cos(rad), vy = cy + r2*Math.sin(rad);
+  const dx=vx-cx, dy=vy-cy, dist=Math.sqrt(dx*dx+dy*dy)||1;
+  return{x:vx+(dx/dist)*44, y:vy+(dy/dist)*44};
+}
+
+function makeFlyCard(card,faceUp){
+  const W=72,H=100,el=document.createElement('div');
+  el.className=`fly ${faceUp?'face-up '+cardColor(card.suit):'face-down'}`;
+  el.style.cssText=`width:${W}px;height:${H}px;`;
+  if(faceUp) el.innerHTML=`<div class="cr t">${card.rank}</div><div class="cc">${SYM[card.suit]}</div><div class="cr b">${card.rank}</div>`;
+  return el;
+}
+
+function flyToDiscard(card,pIdx,onDone){
+  const W=72,H=100,orig=getPlayerOrigin(pIdx),dr=getDiscardRect();
+  const dest={x:dr.left+dr.width/2,y:dr.top+dr.height/2};
+  const rot=(Math.random()-0.5)*28;
+  const el=makeFlyCard(card,true);
+  el.style.left=`${orig.x-W/2}px`;el.style.top=`${orig.y-H/2}px`;
+  document.body.appendChild(el);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    el.style.transition='left 0.3s cubic-bezier(0.25,0.46,0.45,0.94),top 0.3s cubic-bezier(0.25,0.46,0.45,0.94),transform 0.3s ease';
+    el.style.left=`${dest.x-W/2}px`;el.style.top=`${dest.y-H/2}px`;
+    el.style.transform=`rotate(${rot}deg)`;
+  }));
+  setTimeout(()=>{el.remove();onDone();},340);
+}
+
+function flyFromDeck(pIdx,onDone){
+  const W=72,H=100,dr=getDrawRect();
+  const orig={x:dr.left+dr.width/2,y:dr.top+dr.height/2};
+  const dest=getPlayerOrigin(pIdx);
+  const el=makeFlyCard(null,false);
+  el.style.left=`${orig.x-W/2}px`;el.style.top=`${orig.y-H/2}px`;
+  document.body.appendChild(el);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    el.style.transition='left 0.28s cubic-bezier(0.25,0.46,0.45,0.94),top 0.28s cubic-bezier(0.25,0.46,0.45,0.94)';
+    el.style.left=`${dest.x-W/2}px`;el.style.top=`${dest.y-H/2}px`;
+  }));
+  setTimeout(()=>{el.remove();onDone();},320);
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+function render(){
+  if(!G) return;
+  renderOpponents();
+  renderDiscard();
+  renderHand();
+  renderDraw();
+  renderSuit();
+  renderDir();
+  renderLabel();
+  document.getElementById('combo-bar').style.display=eightComboMode?'flex':'none';
+}
+
+// Pentagon layout constants
+// 5 players sit at the 5 vertices of a regular pentagon.
+// Vertex 0 (bottom) = human (seat 4), Vertices 1-4 (going clockwise) = seats 0-3.
+// Pentagon angle: vertices at -90 + k*72 degrees (so bottom vertex at 90deg = bottom of screen)
+// Seat mapping: human(4)=bottom vertex, Mwana(0)=top-left, Temwa(1)=top-right, 
+//               Chisomo(2)=right, Kondwani(3)=left
+// We'll position vertices starting from the bottom and going clockwise:
+// v0=bottom=human, v1=bottom-right, v2=top-right, v3=top(top-left), v4=top-left(left)
+// Clockwise from human: You(4,v0) -> Mwana(0,v1) -> Temwa(1,v2) -> Chisomo(2,v3) -> Kondwani(3,v4) -> You
+// Consecutive seat indices map to consecutive clockwise vertices — no zigzag.
+const SEAT_TO_VERTEX = [1, 2, 3, 4, 0]; // player index -> pentagon vertex index (0=bottom)
+
+function pentagonVertex(vertexIdx, cx, cy, r){
+  // vertex 0 = bottom (angle 90deg), going clockwise
+  const angleDeg = 90 + vertexIdx * 72;
+  const rad = angleDeg * Math.PI / 180;
+  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+}
+
+function renderArena(){
+  const arena = document.getElementById('table-arena');
+  arena.innerHTML = '';
+  const W = window.innerWidth, H = window.innerHeight;
+  const cx = W / 2, cy = H / 2;
+  const usableH = H - 170;
+  const r = Math.min(cx * 0.72, usableH * 0.44, 280);
+
+  // Dynamic polygon: number of sides = total players (including human)
+  const n = G.players.length; // 2-5
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(svgNS, 'svg');
+  svg.setAttribute('width', W); svg.setAttribute('height', H);
+  svg.style.cssText = 'position:absolute;inset:0;pointer-events:none;';
+
+  // Polygon path — always starts from bottom vertex (human)
+  const pts = Array.from({length:n}, (_,i) => {
+    const angleDeg = 90 + i*(360/n);
+    const rad = angleDeg * Math.PI / 180;
+    return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+  });
+  const path = document.createElementNS(svgNS, 'polygon');
+  path.setAttribute('points', pts.map(p=>`${p.x},${p.y}`).join(' '));
+  path.setAttribute('fill', 'rgba(8,42,26,0.35)');
+  path.setAttribute('stroke', 'rgba(201,168,76,0.25)');
+  path.setAttribute('stroke-width', '2');
+  svg.appendChild(path);
+
+  pts.forEach((p,i)=>{
+    const next = pts[(i+1)%n];
+    const mx = (p.x+next.x)/2, my = (p.y+next.y)/2;
+    const line = document.createElementNS(svgNS, 'line');
+    line.setAttribute('x1', mx); line.setAttribute('y1', my);
+    line.setAttribute('x2', cx); line.setAttribute('y2', cy);
+    line.setAttribute('stroke', 'rgba(201,168,76,0.07)');
+    line.setAttribute('stroke-width', '1');
+    svg.appendChild(line);
+  });
+  arena.appendChild(svg);
+
+  // Place AI player zones — vertex i+1 clockwise from human (vertex 0)
+  let aiSlot = 0;
+  G.players.forEach((p, seatIdx) => {
+    if(p.isHuman) return;
+
+    aiSlot++;
+    const vpt = pts[aiSlot % n]; // clockwise from bottom
+
+    const zone = document.createElement('div');
+    zone.className = 'player-zone';
+    zone.setAttribute('data-seat', seatIdx);
+
+    const dx = vpt.x - cx, dy = vpt.y - cy;
+    const dist = Math.sqrt(dx*dx+dy*dy)||1;
+    const pushOut = 44;
+    const fx = vpt.x + (dx/dist)*pushOut;
+    const fy = vpt.y + (dy/dist)*pushOut;
+
+    zone.style.cssText = `left:${fx}px;top:${fy}px;transform:translate(-50%,-50%);`;
+
+    const badge = document.createElement('div');
+    badge.className = 'player-name-badge' + (G.currentPlayer===seatIdx ? ' active-turn' : '');
+    badge.textContent = p.name;
+    if(p.knocked){
+      const kb = document.createElement('span'); kb.className='knock-badge'; kb.textContent='1 LEFT';
+      badge.appendChild(kb);
+    }
+
+    const mc = document.createElement('div'); mc.className='mini-cards';
+    const showCards = Math.min(p.hand.length, 7);
+    for(let j=0;j<showCards;j++){
+      const m=document.createElement('div'); m.className='mini-card'; mc.appendChild(m);
+    }
+
+    const cnt = document.createElement('div'); cnt.className='card-count-lbl';
+    cnt.textContent = `${p.hand.length} card${p.hand.length!==1?'s':''}`;
+
+    // Balance badge from tournament state
+    if(T){
+      const tp = T.players.find(x=>x.name===p.name);
+      if(tp){
+        const bal = document.createElement('div');
+        const low = tp.balance <= ANTE;
+        bal.className = 'balance-badge' + (low ? ' low' : '');
+        bal.textContent = `K${(tp.balance/1000).toFixed(1)}k`;
+        zone.appendChild(bal);
+      }
+    }
+
+    zone.append(badge, mc, cnt);
+    arena.appendChild(zone);
+  });
+}
+
+function renderOpponents(){
+  renderArena();
+  document.getElementById('thinking-dots').classList.toggle('show',!G.players[G.currentPlayer]?.isHuman);
+}
+
+function renderDiscard(){
+  const c=document.getElementById('discard-pile-display');c.innerHTML='';
+  if(!G.discardPile.length) return;
+  const el=buildCard(getTop(),true);el.classList.add('discard-card');c.appendChild(el);
+}
+
+function renderHand(){
+  const container=document.getElementById('player-hand');
+  container.innerHTML='';
+  const player=G.players[G.humanIdx];
+  const myTurn=G.currentPlayer===G.humanIdx&&!animating;
+  const n=player.hand.length;
+  if(n===0) return;
+
+  // Fan physics
+  const {FAN_MAX_ROT_DEG,FAN_MAX_LIFT_PX,FAN_SPREAD_PX,HAND_HOVER_LIFT}=CONFIG;
+  const cardW=72;
+  const spread=Math.min(FAN_SPREAD_PX,Math.floor((window.innerWidth-80)/Math.max(n,1)));
+  const totalWidth=spread*(n-1)+cardW;
+  const startX=Math.max(0,(container.clientWidth||window.innerWidth*0.9)/2-totalWidth/2);
+  container.style.width=totalWidth+'px';
+  container.style.height='130px';
+
+  player.hand.forEach((card,i)=>{
+    const el=buildCard(card,true);
+    el.classList.add('hand-card');
+
+    // Fan: normalise position -1..1 across the hand
+    const t=(n===1)?0:((i/(n-1))*2-1);
+    const rot=t*FAN_MAX_ROT_DEG;
+    const lift=FAN_MAX_LIFT_PX*(1-Math.abs(t));
+    const x=startX+i*spread;
+    const baseTransform=`translateX(${x}px) translateY(${-lift}px) rotate(${rot}deg)`;
+    el.style.transform=baseTransform;
+    el.style.zIndex=i;
+    el.style.left='0';el.style.bottom='0';
+
+    if(myTurn){
+      if(eightComboMode){
+        const lastSel=selectedCards[selectedCards.length-1];
+        const lastSuit=player.hand[lastSel]?.suit;
+        const isSel=selectedCards.includes(i);
+        // Any unselected 8 can chain; support must match last 8's suit (non-8, Jack allowed)
+        const isAdd8=!isSel&&card.rank==='8';
+        const isSupp=!isSel&&card.rank!=='8'&&card.suit===lastSuit;
+        el.classList.add((isSel||isSupp||isAdd8)?'playable':'unplayable');
+        if(isSel){el.classList.add('sel8');el.style.transform=`translateX(${x}px) translateY(${-lift-20}px) rotate(${rot}deg) scale(1.07)`;}
+      } else {
+        el.classList.add(canPlay(card)?'playable':'unplayable');
+      }
+    } else {
+      el.classList.add('unplayable');
+    }
+
+    // Hover lift
+    el.addEventListener('mouseenter',()=>{
+      if(el.classList.contains('unplayable')&&!eightComboMode) return;
+      el.style.transform=`translateX(${x}px) translateY(${-lift-HAND_HOVER_LIFT}px) rotate(${rot}deg) scale(1.06)`;
+      el.style.zIndex=50;
+    });
+    el.addEventListener('mouseleave',()=>{
+      if(el.classList.contains('sel8')){
+        el.style.transform=`translateX(${x}px) translateY(${-lift-20}px) rotate(${rot}deg) scale(1.07)`;
+      } else {
+        el.style.transform=baseTransform;
+      }
+      el.style.zIndex=i;
+    });
+
+    el.onclick=()=>playerPlayCard(i);
+    container.appendChild(el);
+  });
+}
+
+function renderDraw(){
+  const pile=document.getElementById('draw-pile');
+  document.getElementById('draw-count').textContent=`${G.deck.length} card${G.deck.length!==1?'s':''}`;
+  // Penalty glow
+  if(G.penaltyActive) pile.classList.add('penalty-glow');
+  else pile.classList.remove('penalty-glow');
+}
+
+function renderSuit(){
+  const d=document.getElementById('active-suit-display');
+  const s=document.getElementById('active-suit-symbol');
+  // Always show the current effective suit (Ace override OR top-card suit)
+  if(!G.discardPile.length){ d.classList.add('hidden-suit'); return; }
+  const suit = effSuit();
+  d.classList.remove('hidden-suit');
+  s.textContent=SYM[suit];
+  s.style.color=(suit==='H'||suit==='D')?'#c0392b':'#f5f0e8';
+  // Gold border when an Ace override is active, subtle otherwise
+  d.style.borderColor=G.activeSuit?'rgba(201,168,76,0.7)':'rgba(201,168,76,0.25)';
+  d.style.boxShadow=G.activeSuit?'0 0 22px rgba(201,168,76,0.35)':'none';
+}
+
+function renderDir(){
+  document.getElementById('direction-arrow').className='direction-arrow'+(G.direction===-1?' ccw':'');
+}
+
+function renderLabel(){
+  const lbl=document.getElementById('player-turn-label');
+  if(G.currentPlayer===G.humanIdx&&!animating){
+    lbl.textContent=G.penaltyActive?'COUNTER WITH 2 OR DRAW':'YOUR TURN';
+    lbl.style.color='var(--gold-light)';
+  } else {
+    lbl.textContent=animating?'Playing...':`${G.players[G.currentPlayer]?.name}'s Turn`;
+    lbl.style.color='rgba(245,240,232,0.5)';
+  }
+  // Update human balance display
+  const hbb = document.getElementById('human-balance-bar');
+  if(hbb && T){
+    const humanT = T.players.find(p=>p.isHuman);
+    if(humanT){
+      const low = humanT.balance <= ANTE;
+      hbb.innerHTML = `<span class="hbal-amount" style="${low?'color:#e74c3c':''}">MWK ${humanT.balance.toLocaleString()}</span> <span class="hbal-bet">· Ante K500</span>`;
+    }
+  }
+  // Update bet info bar
+  const bib = document.getElementById('bet-info-bar');
+  if(bib && T){
+    bib.textContent = `Round ${T.roundNum} · Pot: K${(T.players.filter(p=>!p.eliminated).length * ANTE / 1000).toFixed(1)}k`;
+  }
+}
+
+function buildCard(card,faceUp){
+  const el=document.createElement('div');
+  el.className=`card ${faceUp?'face-up '+cardColor(card.suit):'face-down'}`;
+  if(faceUp) el.innerHTML=`<div class="card-rank top">${card.rank}</div><div class="card-center">${SYM[card.suit]}</div><div class="card-rank bot">${card.rank}</div>`;
+  return el;
+}
+
+// ============================================================
+// LOG
+// ============================================================
+let logEntries=[];
+function logClear(){
+  logEntries=[];
+  const t=document.getElementById('log-ticker');
+  if(t) t.innerHTML='';
+}
+function log(msg,imp=false){
+  logEntries.unshift({msg,imp});
+  if(logEntries.length>20) logEntries.pop();
+  renderTicker();
+}
+function renderTicker(){
+  const ticker=document.getElementById('log-ticker');
+  if(!ticker) return;
+  ticker.innerHTML='';
+  const entries=logEntries.slice(0,8);
+  const n=entries.length;
+  entries.forEach((e,i)=>{
+    const d=document.createElement('div');
+    d.className='log-entry'+(e.imp?' important':'');
+    // i=0 is newest (top, full opacity), i=n-1 is oldest (bottom, faded out)
+    const opacity = n<=1 ? 1 : 1 - (i/(n-1))*0.92;
+    d.style.opacity=opacity.toFixed(2);
+    d.style.animation='logFadeIn 0.35s ease';
+    d.textContent=e.msg;
+    ticker.appendChild(d);
+  });
+}
+
+// ============================================================
+// TOAST & CONFETTI
+// ============================================================
+let toastT;
+function showToast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2400);
+}
+
+function spawnConfetti(){
+  const c=document.getElementById('confetti-container');c.innerHTML='';
+  const colors=['#c9a84c','#e8c96a','#c0392b','#2980b9','#27ae60','#f5f0e8','#e74c3c'];
+  for(let i=0;i<90;i++){
+    const p=document.createElement('div');p.className='confetti-piece';
+    p.style.cssText=`left:${Math.random()*100}%;background:${colors[i%colors.length]};animation-duration:${2+Math.random()*3}s;animation-delay:${Math.random()*1.5}s;transform:rotate(${Math.random()*360}deg);width:${6+Math.random()*10}px;height:${8+Math.random()*14}px;`;
+    c.appendChild(p);
+  }
+}
+
+// ============================================================
+// RESTORE ON LOAD
+// ============================================================
+window.addEventListener('load',()=>{
+  // Check for casino/multiplayer launch params
+  const urlParams = new URLSearchParams(window.location.search);
+  const token     = urlParams.get('token');
+  const tableId   = urlParams.get('tableId');
+  const operator  = urlParams.get('operator') || 'standalone';
+  const serverUrl = urlParams.get('server') || window.KNOCK_SERVER_URL || null;
+  if(serverUrl) window.KNOCK_SERVER_URL = serverUrl;
+
+  if(token || tableId || serverUrl){
+    // Multiplayer mode — connect to game server
+    initMultiplayer(token, tableId, operator);
+  } else {
+    // Standalone AI mode
+    if(!loadState()){
+      // Nothing to restore — title screen visible
+    }
+  }
+});
+
+window.addEventListener('resize',()=>{
+  if(G&&!G.gameOver) render();
+});
+
+// ============================================================
+// MULTIPLAYER CLIENT
+// ============================================================
+let MP = null; // multiplayer state: { socket, playerId, tableId, myIdx }
+
+function initMultiplayer(token, tableId, operator){
+  // Load Socket.IO dynamically
+  const script = document.createElement('script');
+  script.src = (window.KNOCK_SERVER_URL || 'http://localhost:3001') + '/socket.io/socket.io.js';
+  script.onload = () => connectToServer(token, tableId, operator);
+  script.onerror = () => {
+    // Server unreachable — fall back to standalone
+    showToast('Server offline — playing vs AI');
+    if(!loadState()) {} // standalone mode
+  };
+  document.head.appendChild(script);
+}
+
+function connectToServer(token, tableId, operator){
+  const serverUrl = window.KNOCK_SERVER_URL || 'http://localhost:3001';
+  const socket = io(serverUrl, { transports: ['websocket','polling'] });
+
+  MP = { socket, playerId: null, tableId: null, myIdx: -1, isMultiplayer: true };
+
+  socket.on('connect', () => {
+    console.log('[MP] Connected to server');
+    // Hide title screen, show loading
+    document.getElementById('title-screen').classList.add('hidden');
+    showToast('Connecting to table...');
+
+    const playerName = document.getElementById('player-name-input')?.value?.trim() || 'You';
+    socket.emit('joinTable', { token, tableId, name: playerName });
+  });
+
+  socket.on('joined', ({ playerId, tableId: tid, balance }) => {
+    MP.playerId = playerId;
+    MP.tableId  = tid;
+    // Init T for balance display
+    T = T || { players: [], roundNum: 0, ante: 500 };
+    showToast('Joined table — waiting for players...');
+  });
+
+  socket.on('tableState', (state) => {
+    // Update tournament player list
+    if(!T) T = { players: [], roundNum: state.roundNum || 0, ante: state.ante || 500 };
+    T.roundNum = state.roundNum || T.roundNum;
+    T.players = state.players.map(p => ({
+      name: p.name, balance: p.balance,
+      isHuman: p.id === MP.playerId, eliminated: p.eliminated,
+    }));
+    if(G) render();
+  });
+
+  socket.on('pickPhase', ({ round, seedHash, pool, players: plist }) => {
+    T.roundNum = round;
+    showFairBadge(seedHash);
+    startMPPickPhase(pool, plist);
+  });
+
+  socket.on('playerPicked', ({ playerId, cardIdx }) => {
+    if(PICK && playerId !== MP.playerId){
+      // Mark AI/other player picks on screen
+      PICK.picks[plist_idxOf(playerId)] = { cardIdx, card: PICK.cards[cardIdx] };
+      renderPickScreen();
+    }
+  });
+
+  socket.on('pickReveal', ({ picks, startsFirst }) => {
+    // Show revealed cards
+    if(PICK){
+      Object.entries(picks).forEach(([pid, {cardIdx, card}]) => {
+        PICK.picks[cardIdx] = { card };
+      });
+      renderPickScreen();
+    }
+  });
+
+  socket.on('gameState', (state) => {
+    // Server sends personalised game state (includes our hand, others' hand sizes)
+    applyServerGameState(state);
+  });
+
+  socket.on('gameEvents', (events) => {
+    events.forEach(e => log(e, e.includes('wins') || e.includes('KNOCK') || e.includes('cancelled') || e.includes('reversed')));
+  });
+
+  socket.on('turnTimeout', ({ playerId, drew }) => {
+    if(playerId === MP.playerId) showToast(`Time out — drew ${drew} card${drew>1?'s':''}`);
+  });
+
+  socket.on('moveRejected', ({ error }) => {
+    showToast(error || 'Invalid move');
+    animating = false;
+    startTurnTimer();
+    render();
+  });
+
+  socket.on('roundEnd', (data) => {
+    resolveRound_MP(data);
+  });
+
+  socket.on('tournamentEnd', ({ champion, name, balance }) => {
+    const isMe = champion === MP.playerId;
+    document.getElementById('tourney-title').textContent = isMe ? '🏆 YOU WIN!' : '🏆 CHAMPION!';
+    document.getElementById('tourney-winner').textContent = name + ' takes everything';
+    document.getElementById('tourney-prize').textContent  = 'Final balance: MWK ' + balance.toLocaleString();
+    spawnConfetti2();
+    document.getElementById('tourney-screen').classList.remove('hidden');
+  });
+
+  socket.on('playerDisconnected', ({ playerId: pid, name }) => {
+    if(pid !== MP.playerId) showToast(name + ' disconnected');
+  });
+  socket.on('playerReconnected', ({ name }) => showToast(name + ' reconnected'));
+
+  socket.on('error', ({ code, message }) => {
+    showToast(message || code);
+    if(code === 'TABLE_BUSY' || code === 'TABLE_FULL'){
+      // Redirect to a new table
+      window.location.search = '?token=' + token;
+    }
+  });
+
+  socket.on('disconnect', () => {
+    showToast('Disconnected — reconnecting...');
+    setTimeout(() => {
+      if(MP.playerId && MP.tableId){
+        socket.emit('reconnect', { playerId: MP.playerId, tableId: MP.tableId });
+      }
+    }, 2000);
+  });
+}
+
+function applyServerGameState(state){
+  // Convert server state into local G format
+  if(!G){
+    G = {
+      players: [], humanIdx: -1, deck: new Array(state.deckSize).fill({}),
+      discardPile: [state.discardTop], direction: state.direction,
+      currentPlayer: state.currentPlayer, activeSuit: state.activeSuit,
+      penaltyDraw: state.penaltyDraw, penaltyActive: state.penaltyActive,
+      awaitingSuit: state.awaitingSuit, pendingSkip: false,
+      gameOver: state.gameOver, _aceOnDone: null,
+    };
+  }
+
+  G.direction      = state.direction;
+  G.currentPlayer  = state.currentPlayer;
+  G.activeSuit     = state.activeSuit;
+  G.penaltyDraw    = state.penaltyDraw;
+  G.penaltyActive  = state.penaltyActive;
+  G.awaitingSuit   = state.awaitingSuit;
+  G.gameOver       = state.gameOver;
+  G.discardPile    = [state.discardTop];
+  G.deck           = new Array(state.deckSize).fill({});
+
+  G.players = state.players.map((sp, i) => {
+    const isMe = sp.id === MP.playerId;
+    if(isMe) G.humanIdx = i;
+    return {
+      name:    sp.name,
+      hand:    sp.hand || new Array(sp.handSize).fill({}),
+      knocked: sp.knocked,
+      isHuman: isMe,
+      connected: sp.connected,
+    };
+  });
+
+  MP.myIdx = G.humanIdx;
+  animating = false;
+
+  // Show game screen
+  document.getElementById('pick-screen').classList.add('hidden');
+  document.getElementById('game-screen').classList.remove('hidden');
+
+  render();
+
+  // Handle ace suit modal
+  if(state.awaitingSuit && G.currentPlayer === G.humanIdx){
+    document.getElementById('suit-modal').classList.remove('hidden');
+    G._aceOnDone = () => {};
+  } else {
+    document.getElementById('suit-modal').classList.add('hidden');
+  }
+}
+
+function startMPPickPhase(pool, playerList){
+  const players = playerList.map(p => ({
+    name: p.name, hand: [], isHuman: p.id === MP.playerId, knocked: false,
+  }));
+  PICK = { players, cards: pool, picks: {}, humanPicked: false, done: false };
+
+  document.getElementById('title-screen').classList.add('hidden');
+  document.getElementById('win-screen').classList.add('hidden');
+  document.getElementById('pick-screen').classList.remove('hidden');
+  renderPickScreen();
+  Audio.shuffle();
+}
+
+function plist_idxOf(playerId){
+  if(!PICK) return -1;
+  // We don't have server player IDs in PICK — approximate by name match
+  return -1;
+}
+
+// Override playerPlayCard to send moves to server in multiplayer mode
+const _origPlayerPlayCard = playerPlayCard;
+function playerPlayCard(cardIdx){
+  if(!MP || !MP.isMultiplayer){ _origPlayerPlayCard(cardIdx); return; }
+  if(!G || G.gameOver || G.awaitingSuit || animating) return;
+  if(G.currentPlayer !== G.humanIdx) return;
+
+  const player = G.players[G.humanIdx];
+  const card   = player.hand[cardIdx];
+  if(!card || !card.rank) return; // dummy card (opponent slot)
+
+  stopTurnTimer();
+
+  // Combo mode — collect cards, send when support is tapped
+  if(eightComboMode){
+    if(selectedCards.includes(cardIdx)){
+      selectedCards = selectedCards.filter(i=>i!==cardIdx);
+      if(selectedCards.length===0) eightComboMode=false;
+      render(); return;
+    }
+    if(card.rank==='8'){selectedCards.push(cardIdx);render();return;}
+    // Support card tapped — send combo move
+    const eightCards = selectedCards.map(i=>player.hand[i]);
+    const moveCards  = [...eightCards, card];
+    selectedCards=[]; eightComboMode=false;
+    sendMove({ type:'play', cards: moveCards });
+    return;
+  }
+
+  // All-8s finishing
+  if(card.rank==='8' && player.hand.every(h=>h.rank==='8')){
+    sendMove({ type:'play', cards:[...player.hand] }); return;
+  }
+
+  // 8 entry
+  if(card.rank==='8' && !G.penaltyActive){
+    const hasOther8 = player.hand.some((h,i)=>i!==cardIdx&&h.rank==='8');
+    const hasSupport = player.hand.some((h,i)=>i!==cardIdx&&h.suit===card.suit&&h.rank!=='8');
+    if(hasOther8||hasSupport){ selectedCards=[cardIdx];eightComboMode=true;render();return; }
+    sendMove({ type:'play', cards:[card] }); return;
+  }
+
+  sendMove({ type:'play', cards:[card] });
+}
+
+// Override playerDraw
+const _origPlayerDraw = playerDraw;
+function playerDraw(){
+  if(!MP || !MP.isMultiplayer){ _origPlayerDraw(); return; }
+  if(!G||G.gameOver||G.awaitingSuit||animating) return;
+  if(G.currentPlayer!==G.humanIdx) return;
+  stopTurnTimer();
+  if(eightComboMode) cancelCombo();
+  sendMove({ type:'draw' });
+}
+
+// Override declareSuit
+const _origDeclareSuit = declareSuit;
+function declareSuit(suit){
+  if(!MP || !MP.isMultiplayer){ _origDeclareSuit(suit); return; }
+  document.getElementById('suit-modal').classList.add('hidden');
+  sendMove({ type:'declareSuit', suit });
+}
+
+function sendMove(move){
+  if(!MP || !MP.socket) return;
+  animating = true; // prevent double-clicks while server processes
+  MP.socket.emit('playMove', { move });
+}
+
+function resolveRound_MP(data){
+  Audio.win_jingle();
+  if(T){
+    T.roundNum = data.round;
+    data.results.forEach(r => {
+      const tp = T.players.find(p=>p.name===r.name);
+      if(tp){ tp.balance=r.balance; tp.eliminated=r.eliminated; tp._roundDelta=r.delta; }
+    });
+  }
+  showRoundResult(data.winnerName, data.pot, data.isFinal);
+  // Seed reveal for provably fair
+  if(data.masterSeed){
+    const badge = document.getElementById('fair-badge');
+    if(badge) badge.title = 'Seed: ' + data.masterSeed + '\nHash: ' + data.seedHash + '\n\nSHA-256(seed) == hash';
+  }
+}
+
+// Override nextRound button for multiplayer
+function mpNextRound(){
+  if(MP && MP.isMultiplayer && MP.socket){
+    document.getElementById('win-screen').classList.add('hidden');
+    MP.socket.emit('nextRound');
+  } else {
+    startNewRound();
+  }
+}
+</script>
+</body>
+</html>

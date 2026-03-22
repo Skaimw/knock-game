@@ -1239,6 +1239,8 @@ function triggerKnockEvent(playerName){
 // HUMAN ACTIONS
 // ============================================================
 function playerPlayCard(cardIdx){
+  // In multiplayer mode, route to MP handler
+  if(MP && MP.isMultiplayer) { _mpPlayCard(cardIdx); return; }
   if(!G||G.gameOver||G.awaitingSuit||animating) return;
   if(G.currentPlayer!==G.humanIdx) return;
   stopTurnTimer();
@@ -1368,6 +1370,7 @@ function cancelCombo(){
 }
 
 function playerDraw(){
+  if(MP && MP.isMultiplayer) { _mpDraw(); return; }
   if(!G||G.gameOver||G.awaitingSuit||animating) return;
   if(G.currentPlayer!==G.humanIdx) return;
   stopTurnTimer();
@@ -1381,6 +1384,7 @@ function playerDraw(){
 }
 
 function declareSuit(suit){
+  if(MP && MP.isMultiplayer) { _mpDeclareSuit(suit); return; }
   document.getElementById('suit-modal').classList.add('hidden');
   G.activeSuit=suit;G.awaitingSuit=false;
   log(`${G.players[G.humanIdx].name} declares ${SYM[suit]}`);
@@ -2312,20 +2316,14 @@ function plist_idxOf(playerId){
   return -1;
 }
 
-// Override playerPlayCard to send moves to server in multiplayer mode
-const _origPlayerPlayCard = playerPlayCard;
-function playerPlayCard(cardIdx){
-  if(!MP || !MP.isMultiplayer){ _origPlayerPlayCard(cardIdx); return; }
+// ── MP action helpers (called by the original functions when MP mode active) ──
+function _mpPlayCard(cardIdx){
   if(!G || G.gameOver || G.awaitingSuit || animating) return;
   if(G.currentPlayer !== G.humanIdx) return;
-
   const player = G.players[G.humanIdx];
   const card   = player.hand[cardIdx];
-  if(!card || !card.rank) return; // dummy card (opponent slot)
-
+  if(!card || !card.rank) return;
   stopTurnTimer();
-
-  // Combo mode — collect cards, send when support is tapped
   if(eightComboMode){
     if(selectedCards.includes(cardIdx)){
       selectedCards = selectedCards.filter(i=>i!==cardIdx);
@@ -2333,34 +2331,25 @@ function playerPlayCard(cardIdx){
       render(); return;
     }
     if(card.rank==='8'){selectedCards.push(cardIdx);render();return;}
-    // Support card tapped — send combo move
     const eightCards = selectedCards.map(i=>player.hand[i]);
     const moveCards  = [...eightCards, card];
     selectedCards=[]; eightComboMode=false;
     sendMove({ type:'play', cards: moveCards });
     return;
   }
-
-  // All-8s finishing
   if(card.rank==='8' && player.hand.every(h=>h.rank==='8')){
     sendMove({ type:'play', cards:[...player.hand] }); return;
   }
-
-  // 8 entry
   if(card.rank==='8' && !G.penaltyActive){
     const hasOther8 = player.hand.some((h,i)=>i!==cardIdx&&h.rank==='8');
     const hasSupport = player.hand.some((h,i)=>i!==cardIdx&&h.suit===card.suit&&h.rank!=='8');
     if(hasOther8||hasSupport){ selectedCards=[cardIdx];eightComboMode=true;render();return; }
     sendMove({ type:'play', cards:[card] }); return;
   }
-
   sendMove({ type:'play', cards:[card] });
 }
 
-// Override playerDraw
-const _origPlayerDraw = playerDraw;
-function playerDraw(){
-  if(!MP || !MP.isMultiplayer){ _origPlayerDraw(); return; }
+function _mpDraw(){
   if(!G||G.gameOver||G.awaitingSuit||animating) return;
   if(G.currentPlayer!==G.humanIdx) return;
   stopTurnTimer();
@@ -2368,10 +2357,7 @@ function playerDraw(){
   sendMove({ type:'draw' });
 }
 
-// Override declareSuit
-const _origDeclareSuit = declareSuit;
-function declareSuit(suit){
-  if(!MP || !MP.isMultiplayer){ _origDeclareSuit(suit); return; }
+function _mpDeclareSuit(suit){
   document.getElementById('suit-modal').classList.add('hidden');
   sendMove({ type:'declareSuit', suit });
 }

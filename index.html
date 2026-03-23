@@ -180,6 +180,94 @@ body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(
   -webkit-tap-highlight-color:transparent;
 }
 .htp-link-btn:hover{color:var(--gold);}
+
+/* ── MODE SELECTOR ── */
+.mode-selector{
+  display:flex;gap:10px;width:100%;
+}
+.mode-btn{
+  flex:1;
+  display:flex;flex-direction:column;align-items:center;
+  gap:6px;
+  padding:14px 10px;
+  background:rgba(255,255,255,0.04);
+  border:1.5px solid rgba(201,168,76,0.2);
+  border-radius:10px;
+  cursor:pointer;
+  transition:all 0.2s;
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+  position:relative;
+}
+.mode-btn:hover,.mode-btn:active{
+  background:rgba(201,168,76,0.08);
+  border-color:rgba(201,168,76,0.5);
+}
+.mode-btn.selected{
+  background:rgba(201,168,76,0.12);
+  border-color:var(--gold);
+  box-shadow:0 0 16px rgba(201,168,76,0.2);
+}
+.mode-btn .mode-icon{font-size:1.6rem;line-height:1;}
+.mode-btn .mode-name{
+  font-family:'Cinzel',serif;font-size:0.72rem;
+  letter-spacing:0.12em;color:var(--gold-light);
+  text-transform:uppercase;
+}
+.mode-btn .mode-desc{
+  font-family:'EB Garamond',serif;font-size:0.72rem;
+  color:rgba(245,240,232,0.45);text-align:center;
+  line-height:1.3;
+}
+.mode-btn .mode-check{
+  position:absolute;top:8px;right:10px;
+  width:16px;height:16px;border-radius:50%;
+  border:1.5px solid rgba(201,168,76,0.3);
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.55rem;color:transparent;
+  transition:all 0.2s;
+}
+.mode-btn.selected .mode-check{
+  background:var(--gold);
+  border-color:var(--gold);
+  color:var(--felt-dark);
+}
+/* Server URL input (multiplayer only) */
+.mp-server-row{
+  display:flex;flex-direction:column;gap:6px;
+  width:100%;
+  overflow:hidden;
+  max-height:0;
+  opacity:0;
+  transition:max-height 0.3s ease, opacity 0.3s ease;
+}
+.mp-server-row.visible{
+  max-height:120px;
+  opacity:1;
+}
+.mp-server-row label{
+  font-family:'Cinzel',serif;font-size:0.7rem;
+  letter-spacing:0.15em;color:rgba(201,168,76,0.55);
+  text-transform:uppercase;
+}
+.server-input{
+  width:100%;padding:0.65rem 1rem;
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(201,168,76,0.25);
+  border-radius:6px;color:var(--cream);
+  font-family:'EB Garamond',serif;font-size:0.9rem;
+  outline:none;transition:border-color 0.2s;
+}
+.server-input:focus{border-color:rgba(201,168,76,0.6);}
+.server-input::placeholder{color:rgba(245,240,232,0.25);font-size:0.8rem;}
+.server-status{
+  font-family:'Cinzel',serif;font-size:0.58rem;
+  letter-spacing:0.1em;text-transform:uppercase;
+  min-height:1.2em;text-align:center;
+}
+.server-status.checking{color:rgba(201,168,76,0.5);}
+.server-status.online{ color:#2ecc71;}
+.server-status.offline{color:#e74c3c;}
 .htp-dsa-label{
   font-family:'Cinzel',serif;
   font-size:0.58rem;letter-spacing:0.1em;
@@ -625,7 +713,37 @@ body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(
   <div class="player-select">
     <label>Your Name</label>
     <input type="text" class="name-input" id="player-name-input" placeholder="Enter your name..." maxlength="14" value="You">
-    <button class="btn-primary" onclick="startGame()">Deal Cards</button>
+
+    <!-- Mode selector -->
+    <div class="mode-selector">
+      <div class="mode-btn selected" id="mode-ai" ontouchend="event.preventDefault();selectMode('ai')" onclick="selectMode('ai')">
+        <div class="mode-check">✓</div>
+        <div class="mode-icon">🤖</div>
+        <div class="mode-name">vs AI</div>
+        <div class="mode-desc">Play solo against 4 Malawian AI players</div>
+      </div>
+      <div class="mode-btn" id="mode-mp" ontouchend="event.preventDefault();selectMode('mp')" onclick="selectMode('mp')">
+        <div class="mode-check">✓</div>
+        <div class="mode-icon">🌐</div>
+        <div class="mode-name">Multiplayer</div>
+        <div class="mode-desc">Play live against real players online</div>
+      </div>
+    </div>
+
+    <!-- Server URL (only shown when Multiplayer selected) -->
+    <div class="mp-server-row" id="mp-server-row">
+      <label>Server URL</label>
+      <input type="url" class="server-input" id="server-url-input"
+        placeholder="https://knock-server-production.up.railway.app"
+        value="https://knock-server-production.up.railway.app"
+        oninput="onServerUrlChange()"
+        onblur="checkServerOnline()">
+      <div class="server-status" id="server-status"></div>
+    </div>
+
+    <button class="btn-primary" id="deal-btn"
+      ontouchend="event.preventDefault();startGame()"
+      onclick="startGame()">Deal Cards</button>
     <button class="htp-link-btn" ontouchend="event.preventDefault();showHowToPlay();" onclick="showHowToPlay()">📖 How to Play</button>
   </div>
 </div>
@@ -1120,10 +1238,87 @@ function cardColor(s){return(s==='H'||s==='D')?'red':'black';}
 // ============================================================
 // PICK PHASE
 // ============================================================
+// ── GAME MODE STATE ──
+let _selectedMode = 'ai'; // 'ai' | 'mp'
+let _serverCheckTimer = null;
+
+function selectMode(mode) {
+  _selectedMode = mode;
+  const aiBtn = document.getElementById('mode-ai');
+  const mpBtn = document.getElementById('mode-mp');
+  const serverRow = document.getElementById('mp-server-row');
+  const dealBtn = document.getElementById('deal-btn');
+
+  if(mode === 'ai') {
+    aiBtn.classList.add('selected');
+    mpBtn.classList.remove('selected');
+    serverRow.classList.remove('visible');
+    dealBtn.textContent = 'Deal Cards';
+    document.getElementById('server-status').textContent = '';
+  } else {
+    mpBtn.classList.add('selected');
+    aiBtn.classList.remove('selected');
+    serverRow.classList.add('visible');
+    dealBtn.textContent = 'Join Table';
+    // Check server status after a short delay
+    setTimeout(checkServerOnline, 400);
+  }
+}
+
+function onServerUrlChange() {
+  // Reset status while typing
+  const status = document.getElementById('server-status');
+  status.textContent = '';
+  status.className = 'server-status';
+  clearTimeout(_serverCheckTimer);
+  _serverCheckTimer = setTimeout(checkServerOnline, 1200);
+}
+
+async function checkServerOnline() {
+  if(_selectedMode !== 'mp') return;
+  const url = document.getElementById('server-url-input').value.trim();
+  if(!url) return;
+  const status = document.getElementById('server-status');
+  status.textContent = 'Checking server...';
+  status.className = 'server-status checking';
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    const res = await fetch(url + '/health', { signal: controller.signal });
+    clearTimeout(timeout);
+    if(res.ok) {
+      const data = await res.json().catch(() => ({}));
+      const conns = data.connections !== undefined ? ` · ${data.connections} online` : '';
+      status.textContent = '● Server online' + conns;
+      status.className = 'server-status online';
+    } else {
+      status.textContent = '✕ Server error (' + res.status + ')';
+      status.className = 'server-status offline';
+    }
+  } catch(e) {
+    status.textContent = '✕ Unreachable — check URL';
+    status.className = 'server-status offline';
+  }
+}
+
 function startGame(){
   const humanName = document.getElementById('player-name-input').value.trim()||'You';
 
-  // Init tournament — assign random balances
+  if(_selectedMode === 'mp') {
+    // Multiplayer mode — connect to Railway server
+    const serverUrl = document.getElementById('server-url-input').value.trim();
+    if(!serverUrl) {
+      showToast('Enter a server URL first');
+      return;
+    }
+    window.KNOCK_SERVER_URL = serverUrl;
+    // Hide title, show connecting toast
+    document.getElementById('title-screen').classList.add('hidden');
+    initMultiplayer(null, null, 'standalone');
+    return;
+  }
+
+  // AI mode — standalone tournament
   const allNames = [...AI_NAMES, humanName];
   T = {
     roundNum: 0,
@@ -1302,7 +1497,18 @@ function beginActualGame(players,startIdx){
 function resetGame(){
   stopTurnTimer();
   clearSavedState();
+  if(MP && MP.socket) { try{ MP.socket.disconnect(); }catch(e){} }
+  MP = null; _selectedMode = 'ai';
   ['win-screen','pick-screen','game-screen','tourney-screen'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  // Reset mode selector to AI
+  const aiBtn = document.getElementById('mode-ai');
+  const mpBtn = document.getElementById('mode-mp');
+  const serverRow = document.getElementById('mp-server-row');
+  const dealBtn = document.getElementById('deal-btn');
+  if(aiBtn) aiBtn.classList.add('selected');
+  if(mpBtn) mpBtn.classList.remove('selected');
+  if(serverRow) serverRow.classList.remove('visible');
+  if(dealBtn) dealBtn.textContent = 'Deal Cards';
   document.getElementById('title-screen').classList.remove('hidden');
   G=null;PICK=null;T=null;
 }
@@ -2625,6 +2831,10 @@ window.addEventListener('load',()=>{
 
   if(token || tableId || serverUrl){
     // Multiplayer mode — connect to game server
+    // Clean URL so a page refresh goes back to standalone (not stuck in MP)
+    if(window.history && window.history.replaceState) {
+      window.history.replaceState({}, '', window.location.pathname);
+    }
     initMultiplayer(token, tableId, operator);
   } else {
     // Standalone AI mode
@@ -2654,7 +2864,18 @@ function initMultiplayer(token, tableId, operator){
   script.onload = () => connectToServer(token, tableId, operator);
   script.onerror = () => {
     // Server unreachable — fall back to standalone
-    showToast('Server offline — playing vs AI');
+    showToast('Server offline — switching to AI mode');
+    _selectedMode = 'ai';
+    // Reset mode selector UI
+    const aiBtn = document.getElementById('mode-ai');
+    const mpBtn = document.getElementById('mode-mp');
+    const serverRow = document.getElementById('mp-server-row');
+    if(aiBtn) aiBtn.classList.add('selected');
+    if(mpBtn) mpBtn.classList.remove('selected');
+    if(serverRow) serverRow.classList.remove('visible');
+    const dealBtn = document.getElementById('deal-btn');
+    if(dealBtn) dealBtn.textContent = 'Deal Cards';
+    document.getElementById('title-screen').classList.remove('hidden');
     if(!loadState()) {} // standalone mode
   };
   document.head.appendChild(script);
@@ -2662,17 +2883,46 @@ function initMultiplayer(token, tableId, operator){
 
 function connectToServer(token, tableId, operator){
   const serverUrl = window.KNOCK_SERVER_URL || 'http://localhost:3001';
-  const socket = io(serverUrl, { transports: ['websocket','polling'] });
+  const socket = io(serverUrl, {
+    transports: ['websocket','polling'],
+    timeout: 8000,           // 8s connection timeout
+    reconnectionAttempts: 3, // try 3 times then give up
+    reconnectionDelay: 1500,
+  });
 
   MP = { socket, playerId: null, tableId: null, myIdx: -1, isMultiplayer: true };
 
+  // Connection timeout — fall back to standalone if server unreachable
+  const connectTimeout = setTimeout(() => {
+    if(!MP.playerId) {
+      console.warn('[MP] Server timeout — falling back to standalone');
+      socket.disconnect();
+      MP = null;
+      animating = false;
+      _selectedMode = 'ai';
+      const aiBtn = document.getElementById('mode-ai');
+      const mpBtn = document.getElementById('mode-mp');
+      const serverRow = document.getElementById('mp-server-row');
+      if(aiBtn) aiBtn.classList.add('selected');
+      if(mpBtn) mpBtn.classList.remove('selected');
+      if(serverRow) serverRow.classList.remove('visible');
+      const dealBtn = document.getElementById('deal-btn');
+      if(dealBtn) dealBtn.textContent = 'Deal Cards';
+      // Show status on server input
+      const status = document.getElementById('server-status');
+      if(status){ status.textContent = '✕ Connection timed out'; status.className = 'server-status offline'; }
+      document.getElementById('title-screen').classList.remove('hidden');
+      showToast('Could not reach server — try again');
+    }
+  }, 8000);
+
   socket.on('connect', () => {
+    clearTimeout(connectTimeout);
     console.log('[MP] Connected to server');
-    // Hide title screen, show loading
     document.getElementById('title-screen').classList.add('hidden');
     showToast('Connecting to table...');
-
     const playerName = document.getElementById('player-name-input')?.value?.trim() || 'You';
+    showToast('Connecting to server...');
     socket.emit('joinTable', { token, tableId, name: playerName });
   });
 
@@ -2739,6 +2989,10 @@ function connectToServer(token, tableId, operator){
     render();
   });
 
+  // Reset animating if server goes silent for 5 seconds mid-move
+  let _mpMoveTimeout = null;
+  const _origSendMove = sendMove;
+
   socket.on('roundEnd', (data) => {
     resolveRound_MP(data);
   });
@@ -2765,17 +3019,34 @@ function connectToServer(token, tableId, operator){
     }
   });
 
-  socket.on('disconnect', () => {
-    showToast('Disconnected — reconnecting...');
-    setTimeout(() => {
-      if(MP.playerId && MP.tableId){
-        socket.emit('reconnect', { playerId: MP.playerId, tableId: MP.tableId });
+  socket.on('disconnect', (reason) => {
+    animating = false; // always unblock UI on disconnect
+    if(reason === 'io server disconnect' || reason === 'transport close') {
+      showToast('Disconnected from server');
+      // Fall back to standalone if we haven't started a game yet
+      if(!G) {
+        MP = null;
+        document.getElementById('title-screen').classList.remove('hidden');
       }
-    }, 2000);
+    } else {
+      showToast('Reconnecting...');
+      setTimeout(() => {
+        if(MP && MP.playerId && MP.tableId){
+          socket.emit('reconnect', { playerId: MP.playerId, tableId: MP.tableId });
+        }
+      }, 2000);
+    }
+  });
+
+  socket.on('connect_error', () => {
+    animating = false;
+    clearTimeout(connectTimeout);
   });
 }
 
 function applyServerGameState(state){
+  // Clear the move watchdog — server responded
+  clearTimeout(window._mpWatchdog);
   // Convert server state into local G format
   if(!G){
     G = {
@@ -2895,8 +3166,20 @@ function _mpDeclareSuit(suit){
 
 function sendMove(move){
   if(!MP || !MP.socket) return;
-  animating = true; // prevent double-clicks while server processes
+  animating = true;
   MP.socket.emit('playMove', { move });
+
+  // Watchdog: if server doesn't respond in 6 seconds, unblock the UI
+  clearTimeout(window._mpWatchdog);
+  window._mpWatchdog = setTimeout(() => {
+    if(animating && MP && MP.isMultiplayer) {
+      console.warn('[MP] Server response timeout — unblocking UI');
+      animating = false;
+      showToast('Connection slow — try again');
+      render();
+      if(G && G.currentPlayer === G.humanIdx) startTurnTimer();
+    }
+  }, 6000);
 }
 
 function resolveRound_MP(data){
